@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">MT</string>
+    <string name="btn">Button</string>
+    <string name="gps_status_enabled">Enabled</string>
+    <string name="gps_status_disabled">Disabeled</string>
+    <string name="permission_status_granted">Granted</string>
+    <string name="permission_status_denied">Denied</string>
+    <string name="permission_status_bloked">Blocked</string>
+    <string name="permission_required_title">Required</string>
+    <string name="permission_required_message">permission required</string>
+</resources>
