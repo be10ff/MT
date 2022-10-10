@@ -2,28 +2,21 @@ package com.example.mt
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
+import android.location.Location
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.mt.model.GPSAction
 import com.example.mt.model.PermissionStatus
-import com.example.mt.model.UIAction
 import com.example.mt.ui.main.MainFragment
 import com.example.mt.ui.main.MainViewModel
-import com.example.mt.ui.main.UIViewModel
 import com.nabinbhandari.android.permissions.PermissionHandler
 import com.nabinbhandari.android.permissions.Permissions
-import java.util.ArrayList
 
 class MainActivity : AppCompatActivity() {
-
-    lateinit var uIViewModel: UIViewModel
     lateinit var mainViewModel: MainViewModel
-
     private var alertDialog : AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,15 +27,11 @@ class MainActivity : AppCompatActivity() {
                 .replace(R.id.container, MainFragment.newInstance())
                 .commitNow()
         }
-        uIViewModel = ViewModelProvider(this).get(UIViewModel::class.java)
         mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
 
-//        if (isPermissionGranted(Manifest.permission.READ_PHONE_STATE)) {
-//            viewModel.permissionsFlowCompleted()
-//        } else {
-//            permissionsFlow.request(Manifest.permission.READ_PHONE_STATE).launchIn(lifecycleScope)
-//        }
         subscribeToLocationPermissionListener()
+        //Move
+        mainViewModel.gpsDataLiveData.observe(this, gpsObserver)
     }
 
     private fun subscribeToLocationPermissionListener(){
@@ -53,18 +42,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val permissionObserver = Observer<PermissionStatus> { status ->
-        status?.let{
-            //updatePermissionCheckUI(status)
-            when(status){
+        status?.let {
+            when (status) {
                 is PermissionStatus.Granted -> hangdleGpsDialog()
                 is PermissionStatus.Denied -> showLocationPermissionNeededDialog()
+                else -> {}
             }
         }
     }
 
-    private val permissionHandler= object: PermissionHandler() {
+    private val gpsObserver = Observer<Location> { location ->
+        mainViewModel.submitAction(GPSAction.LocationUpdated(location))
+    }
+
+    private val permissionHandler = object : PermissionHandler() {
         override fun onGranted() {
-//            TODO("Not yet implemented")
             mainViewModel.submitAction(GPSAction.GPSEnabled(true))
         }
 

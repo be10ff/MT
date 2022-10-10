@@ -2,34 +2,40 @@ package com.example.mt.ui.main
 
 import android.Manifest
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
+import com.example.mt.data.MtLocationListener
 import com.example.mt.data.PermissionStatusListener
 import com.example.mt.model.GPSAction
 import com.example.mt.model.MainState
-import com.example.mt.model.UIAction
-import com.example.mt.model.UIState
 import kotlinx.coroutines.launch
 
-class MainViewModel(application: Application) : AndroidViewModel(application){
-    val locationPermissionStatusLiveData = PermissionStatusListener(application, Manifest.permission.ACCESS_FINE_LOCATION)
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+    val locationPermissionStatusLiveData =
+        PermissionStatusListener(application, Manifest.permission.ACCESS_FINE_LOCATION)
+    val gpsDataLiveData = MtLocationListener(application)
 
     val mainState: MutableLiveData<MainState> by lazy {
         MutableLiveData<MainState>().apply {
             postValue(
                 MainState(
                     gpsState = false,
-                    buttonState = false
+                    buttonState = false,
+                    location = null
                 )
             )
         }
     }
+    val gpsState = mainState.map {
+        it.location
+    }.distinctUntilChanged()
 
 
     fun submitAction(action: GPSAction) {
-        when(action) {
-            is GPSAction.GPSEnabled -> updateState{it.copy(gpsState = true)}
+        when (action) {
+            is GPSAction.GPSEnabled -> updateState { it.copy(gpsState = true) }
+            is GPSAction.LocationUpdated -> {
+                updateState { it.copy(location = action.location) }
+            }
         }
     }
 
