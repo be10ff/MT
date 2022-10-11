@@ -1,11 +1,13 @@
 package com.example.mt.ui.main
 
+import android.location.Location
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
 import com.example.mt.R
 import kotlinx.android.synthetic.main.main_fragment.*
 
@@ -32,19 +34,24 @@ class MainFragment : Fragment() {
     }
 
     private fun setupObserve() {
-//        uiViewModel.mainState.observe(viewLifecycleOwner){ mainState ->
-//            message.text = mainState.buttonState.toString()
-//        }
 
         mainViewModel.gpsState.observe(viewLifecycleOwner) { location ->
             btn_gps.text = location.toString()
         }
+        mainViewModel.gpsState.observe(viewLifecycleOwner, gpsObserver)
     }
 
     private fun setupGUI() {
-//        btn.setOnClickListener {
-//            uiViewModel.submitAction(UIAction.ToggleGps)
-//        }
+        btn.setOnClickListener {
+        }
+    }
+
+    private val gpsObserver: Observer<Location?> = Observer { location ->
+        location?.let {
+            btn_gps.text = toString()
+        } ?: run {
+            btn_gps.text = resources.getText(R.string.gps_status_disabled)
+        }
     }
 
 }
