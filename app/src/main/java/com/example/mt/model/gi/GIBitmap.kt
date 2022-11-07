@@ -22,13 +22,13 @@ data class GIBitmap(
 
     fun draw(canvas: Canvas, bounds: GIBounds) {
         if (bitmap.isRecycled) return
-        if (!_bounds.contains(bounds)) return
+//        if (!_bounds.contains(bounds)) return
 
-        val pixelWidth = bounds.width() / canvas.width
-        val pixelHeight = bounds.height() / canvas.height
+        val pixelWidth = bounds.width / canvas.width
+        val pixelHeight = bounds.height / canvas.height
 
-        val leftTop = _bounds.leftTop()
-        val rightBottom = _bounds.rightBottom()
+        val leftTop = _bounds.topLeft
+        val rightBottom = _bounds.bottomRight
 
         val left: Int = ((leftTop.lon - bounds.left) / pixelWidth).toInt()
         val top: Int = ((bounds.top - leftTop.lat) / pixelHeight).toInt()

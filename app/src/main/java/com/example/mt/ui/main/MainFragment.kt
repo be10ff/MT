@@ -9,7 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import com.example.mt.R
-import kotlinx.android.synthetic.main.main_fragment.*
 
 class MainFragment : Fragment() {
 
@@ -36,21 +35,25 @@ class MainFragment : Fragment() {
     private fun setupObserve() {
 
         mainViewModel.gpsState.observe(viewLifecycleOwner) { location ->
-            btn_gps.text = location.toString()
+
         }
         mainViewModel.gpsState.observe(viewLifecycleOwner, gpsObserver)
+
+        mainViewModel.storageState.observe(viewLifecycleOwner) { granted ->
+
+        }
+
     }
 
     private fun setupGUI() {
-        btn.setOnClickListener {
-        }
+
     }
 
     private val gpsObserver: Observer<Location?> = Observer { location ->
-        location?.let {
-            btn_gps.text = toString()
+        location?.let { location ->
+//            btn_gps.text = location.toString()
         } ?: run {
-            btn_gps.text = resources.getText(R.string.gps_status_disabled)
+//            btn_gps.text = resources.getText(R.string.gps_status_disabled)
         }
     }
 

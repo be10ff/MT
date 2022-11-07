@@ -17,7 +17,8 @@ import com.nabinbhandari.android.permissions.Permissions
 
 class MainActivity : AppCompatActivity() {
     lateinit var mainViewModel: MainViewModel
-    private var alertDialog : AlertDialog? = null
+    private var locationAlertDialog: AlertDialog? = null
+    private var storageAlertDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,18 +31,26 @@ class MainActivity : AppCompatActivity() {
         mainViewModel = ViewModelProvider(this).get(MainViewModel::class.java)
 
         subscribeToLocationPermissionListener()
+        subscribeToReadStoragePermissionListener()
         //Move
         mainViewModel.gpsDataLiveData.observe(this, gpsObserver)
     }
 
-    private fun subscribeToLocationPermissionListener(){
+    private fun subscribeToLocationPermissionListener() {
         mainViewModel.locationPermissionStatusLiveData.observe(
             this,
-            permissionObserver
+            locationPermissionObserver
         )
     }
 
-    private val permissionObserver = Observer<PermissionStatus> { status ->
+    private fun subscribeToReadStoragePermissionListener() {
+        mainViewModel.readStoragePermissionStatusLiveData.observe(
+            this,
+            readStoragePermissionObserver
+        )
+    }
+
+    private val locationPermissionObserver = Observer<PermissionStatus> { status ->
         status?.let {
             when (status) {
                 is PermissionStatus.Granted -> hangdleGpsDialog()
@@ -51,11 +60,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val readStoragePermissionObserver = Observer<PermissionStatus> { status ->
+        status?.let {
+            when (status) {
+                is PermissionStatus.Denied -> showReadStoragePermissionNeededDialog()
+                else -> {}
+            }
+        }
+    }
+
     private val gpsObserver = Observer<Location> { location ->
         mainViewModel.submitAction(GPSAction.LocationUpdated(location))
     }
 
-    private val permissionHandler = object : PermissionHandler() {
+    private val locationPermissionHandler = object : PermissionHandler() {
         override fun onGranted() {
             mainViewModel.submitAction(GPSAction.GPSEnabled(true))
         }
@@ -66,14 +84,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val storagePermissionHandler = object : PermissionHandler() {
+        override fun onGranted() {
+            //LoadProj
+        }
+
+        override fun onDenied(context: Context?, deniedPermissions: ArrayList<String>?) {
+            super.onDenied(context, deniedPermissions)
+            finish()
+        }
+    }
+
     private fun hangdleGpsDialog() {
         mainViewModel.submitAction(GPSAction.GPSEnabled(true))
     }
 
     private fun showLocationPermissionNeededDialog() {
-        if(alertDialog?.isShowing == true) return
+        if (locationAlertDialog?.isShowing == true) return
 
-        alertDialog = AlertDialog.Builder(this)
+        locationAlertDialog = AlertDialog.Builder(this)
             .setTitle(R.string.permission_required_title)
             .setMessage(R.string.permission_required_message)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -81,11 +110,30 @@ class MainActivity : AppCompatActivity() {
                     this,
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     null,
-                    permissionHandler
+                    locationPermissionHandler
                 )
             }
             .create()
-        alertDialog?.apply { show() }
+        locationAlertDialog?.apply { show() }
+
+    }
+
+    private fun showReadStoragePermissionNeededDialog() {
+        if (storageAlertDialog?.isShowing == true) return
+
+        storageAlertDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.permission_required_title)
+            .setMessage(R.string.permission_required_message)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                Permissions.check(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    null,
+                    storagePermissionHandler
+                )
+            }
+            .create()
+        storageAlertDialog?.apply { show() }
 
     }
 

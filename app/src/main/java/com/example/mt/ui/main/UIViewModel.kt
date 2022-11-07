@@ -15,7 +15,8 @@ class UIViewModel : ViewModel() {
                 MainState(
                     gpsState = false,
                     buttonState = false,
-                    location = null
+                    location = null,
+                    storageGranted = false
                 )
             )
         }

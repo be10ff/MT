@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     val locationPermissionStatusLiveData =
         PermissionStatusListener(application, Manifest.permission.ACCESS_FINE_LOCATION)
+    val readStoragePermissionStatusLiveData =
+        PermissionStatusListener(application, Manifest.permission.READ_EXTERNAL_STORAGE)
     val gpsDataLiveData = MtLocationListener(application)
 
     val mainState: MutableLiveData<MainState> by lazy {
@@ -20,7 +22,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 MainState(
                     gpsState = false,
                     buttonState = false,
-                    location = null
+                    location = null,
+                    storageGranted = false
                 )
             )
         }
@@ -29,12 +32,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         it.location
     }.distinctUntilChanged()
 
+    val storageState = mainState.map {
+        it.storageGranted
+    }.distinctUntilChanged()
+
 
     fun submitAction(action: GPSAction) {
         when (action) {
             is GPSAction.GPSEnabled -> updateState { it.copy(gpsState = true) }
+
             is GPSAction.LocationUpdated -> {
                 updateState { it.copy(location = action.location) }
+            }
+
+            is GPSAction.StorageGranted -> {
+                updateState { it.copy(storageGranted = action.granted) }
             }
         }
     }
