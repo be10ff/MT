@@ -6,8 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".ui.main.MainFragment">
 
-    <com.example.mt.ui.view.GIMap
-        android:id="@+id/sfvMap"
+    <com.example.mt.ui.view.ReMapView
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.example.mt.ui.view.TouchControl
+        android:id="@+id/control"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

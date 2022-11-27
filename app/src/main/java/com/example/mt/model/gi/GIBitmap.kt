@@ -2,6 +2,7 @@ package com.example.mt.model.gi
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Rect
 
 data class GIBitmap(
@@ -11,7 +12,9 @@ data class GIBitmap(
     val height: Int
 ) {
     constructor(bounds: GIBounds, width: Int, height: Int) :
-            this(bounds, Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888), width, height)
+            this(bounds, Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+                eraseColor(Color.WHITE)
+            }, width, height)
 
     constructor(bounds: GIBounds, bitmap: Bitmap) : this(
         bounds,

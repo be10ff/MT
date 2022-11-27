@@ -30,6 +30,10 @@ sealed class GILayer(
             }
         }
 
+        override suspend fun render(area: GIBounds, bitmap: Bitmap, opacity: Int, scale: Double) {
+            renderer.render(this, area, opacity, bitmap, scale)
+        }
+
         fun getTiles(bounds: GIBounds, z: Int): List<GITile> {
 //            return when(properties?.sqldbProperties?.zoomingType){
 //                ZoomingType.ADAPTIVE -> emptyList()
@@ -68,4 +72,5 @@ sealed class GILayer(
     }
 
     abstract fun redraw(area: GIBounds, bitmap: Bitmap, opacity: Int, scale: Double)
+    abstract suspend fun render(area: GIBounds, bitmap: Bitmap, opacity: Int, scale: Double)
 }

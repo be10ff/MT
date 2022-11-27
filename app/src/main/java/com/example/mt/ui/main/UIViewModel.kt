@@ -1,10 +1,14 @@
 package com.example.mt.ui.main
 
+import android.graphics.Rect
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mt.model.MainState
+import com.example.mt.model.MapState
 import com.example.mt.model.UIAction
+import com.example.mt.model.gi.GIBounds
+import com.example.mt.model.gi.GIProjection
 import kotlinx.coroutines.launch
 
 @Deprecated("useless")
@@ -16,7 +20,20 @@ class UIViewModel : ViewModel() {
                     gpsState = false,
                     buttonState = false,
                     location = null,
-                    storageGranted = false
+                    storageGranted = false,
+                    mapState = MapState(
+                        bounds = GIBounds(
+                            GIProjection.WGS84,
+                            28.0,
+                            65.0,
+                            48.0,
+                            46.0
+                        ).reproject(GIProjection.WorldMercator),
+//                        position = Location(),
+                        zoom = 1f,
+                        viewRect = Rect(),
+                        update = false
+                    )
                 )
             )
         }

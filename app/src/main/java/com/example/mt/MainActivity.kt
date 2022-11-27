@@ -8,7 +8,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.example.mt.model.GPSAction
+import com.example.mt.model.Action
 import com.example.mt.model.PermissionStatus
 import com.example.mt.ui.main.MainFragment
 import com.example.mt.ui.main.MainViewModel
@@ -70,17 +70,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val gpsObserver = Observer<Location> { location ->
-        mainViewModel.submitAction(GPSAction.LocationUpdated(location))
+        mainViewModel.submitAction(Action.GPSAction.LocationUpdated(location))
     }
 
     private val locationPermissionHandler = object : PermissionHandler() {
         override fun onGranted() {
-            mainViewModel.submitAction(GPSAction.GPSEnabled(true))
+            mainViewModel.submitAction(Action.GPSAction.GPSEnabled(true))
         }
 
         override fun onDenied(context: Context?, deniedPermissions: ArrayList<String>?) {
             super.onDenied(context, deniedPermissions)
-            mainViewModel.submitAction(GPSAction.GPSEnabled(false))
+            mainViewModel.submitAction(Action.GPSAction.GPSEnabled(false))
         }
     }
 
@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hangdleGpsDialog() {
-        mainViewModel.submitAction(GPSAction.GPSEnabled(true))
+        mainViewModel.submitAction(Action.GPSAction.GPSEnabled(true))
     }
 
     private fun showLocationPermissionNeededDialog() {

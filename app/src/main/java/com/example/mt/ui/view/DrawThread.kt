@@ -5,21 +5,44 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.view.SurfaceHolder
 import com.example.mt.map.layer.GILayer
-import com.example.mt.model.gi.GIBounds
+import com.example.mt.model.gi.GIBitmap
 
-class DrawThread(val surfaceHolder: SurfaceHolder, val bounds: GIBounds) : Thread() {
+class DrawThread(private val surfaceHolder: SurfaceHolder) : Thread() {
+
+    //    var bounds: GIBounds? = null
+    var bitmap: GIBitmap? = null
 
     override fun run() {
-        val canvas: Canvas = surfaceHolder.lockCanvas()
-        val rect = canvas.clipBounds
-        val tmpBitmap =
-            Bitmap.createBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888).apply {
-                eraseColor(Color.WHITE)
+        var canvas: Canvas? = null
+//        Log.d("THREAD", "started" + this )
+        try {
+            canvas = surfaceHolder.lockCanvas()
+            canvas?.let {
+                val rect = canvas.clipBounds
+                val tmpBitmap =
+                    Bitmap.createBitmap(rect.width(), rect.height(), Bitmap.Config.ARGB_8888)
+                        .apply {
+                            eraseColor(Color.WHITE)
+                        }
+                bitmap?._bounds?.let { area ->
+                    synchronized(surfaceHolder) {
+//                            Log.d("THREAD", "redraw" + this )
+                        GILayer.sqlTest.redraw(area, tmpBitmap, 0, 0.0)
+                        canvas.drawBitmap(tmpBitmap, rect, rect, null)
+                    }
+                }
             }
-        synchronized(surfaceHolder) {
-            GILayer.sqlTest.redraw(bounds, tmpBitmap, 0, 0.0)
-            canvas.drawBitmap(tmpBitmap, rect, rect, null)
+        } finally {
+            canvas?.let {
+//                Log.d("THREAD", "finish" + this )
+                surfaceHolder.unlockCanvasAndPost(it)
+            }
         }
-        surfaceHolder.unlockCanvasAndPost(canvas)
+
+    }
+
+    fun draw(bitmap: GIBitmap) {
+        this.bitmap = bitmap
+        start()
     }
 }
