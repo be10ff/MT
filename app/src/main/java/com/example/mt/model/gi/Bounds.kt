@@ -1,7 +1,7 @@
 package com.example.mt.model.gi
 
-data class GIBounds(
-    val projection: GIProjection,
+data class Bounds(
+    val projection: Projection,
     val left: Double,
     val top: Double,
     val right: Double,
@@ -24,10 +24,10 @@ data class GIBounds(
 //
 //    fun rightBottom() = GILonLat(right, bottom)
 
-    fun reproject(projection: GIProjection): GIBounds {
-        val topLeft = GIProjection.reproject(this.topLeft, this.projection, projection)
-        val bottomRight = GIProjection.reproject(bottomRight, this.projection, projection)
-        return GIBounds(projection, topLeft.lon, topLeft.lat, bottomRight.lon, bottomRight.lat)
+    fun reproject(projection: Projection): Bounds {
+        val topLeft = Projection.reproject(this.topLeft, this.projection, projection)
+        val bottomRight = Projection.reproject(bottomRight, this.projection, projection)
+        return Bounds(projection, topLeft.lon, topLeft.lat, bottomRight.lon, bottomRight.lat)
     }
 
     companion object

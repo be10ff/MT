@@ -1,8 +1,9 @@
-package com.example.mt.model.gi
+package com.example.mt.map
 
+import com.example.mt.model.gi.GILonLat
 import kotlin.math.*
 
-class GIYandexUtils {
+class YandexUtils {
 
     companion object {
         val R: Double = 6378137.0

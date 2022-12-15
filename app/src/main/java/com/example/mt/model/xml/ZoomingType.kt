@@ -1,4 +1,4 @@
-package com.example.mt.model.properties
+package com.example.mt.model.xml
 
 enum class ZoomingType {
     SMART,

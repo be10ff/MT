@@ -47,7 +47,7 @@ class TouchControl(
                 focus.y = detector?.focusY?.toInt() ?: 0
                 scaled = true
             }
-            return super.onScale(detector)
+            return true
         }
     }
 
@@ -86,7 +86,6 @@ class TouchControl(
                     activeId = event.getPointerId(0)
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    val distance = hypot(originPointX - x, originPointY - y)
                     Log.d("TOUCH", "action move " + this)
                     if (touchSlop > hypot(originPointX - x, originPointY - y)) return false
 
@@ -98,7 +97,7 @@ class TouchControl(
                         val scale = /*map.viewRect.width/map.view.width*/ 1f
                         listener.moveViewBy(
                             (scale * (previousX - pointerX)).toInt(),
-                            ((previousY - pointerY) * scale).toInt()
+                            ((pointerY - previousY) * scale).toInt()
                         )
                         previousX = pointerX
                         previousY = pointerY

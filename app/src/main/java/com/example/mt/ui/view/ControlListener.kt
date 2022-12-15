@@ -2,7 +2,7 @@ package com.example.mt.ui.view
 
 import android.graphics.Point
 import android.graphics.Rect
-import com.example.mt.model.gi.GIBounds
+import com.example.mt.model.xml.GIBounds
 
 interface ControlListener {
     fun onSetToDraft(b: Boolean)

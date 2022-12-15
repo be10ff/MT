@@ -1,189 +1,130 @@
 package com.example.mt.map.layer
 
-import android.database.Cursor
 import android.graphics.*
-import com.example.mt.model.gi.GIBounds
+import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.GITile
-import com.example.mt.model.properties.ZoomingType
+import com.example.mt.model.gi.Layer
+import com.example.mt.model.xml.GILayerType
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
-
 sealed class GIRenderer {
-    abstract fun renderImage(
-        layer: GILayer,
-        area: GIBounds,
+    abstract suspend fun renderBitmap(
+        layer: Layer,
+        area: Bounds,
         opacity: Int,
-        bitmap: Bitmap,
+        rect: Rect,
         scale: Double
-    )
-
-    abstract suspend fun render(
-        layer: GILayer,
-        area: GIBounds,
-        opacity: Int,
-        bitmap: Bitmap,
-        scale: Double
-    )
+    ): Bitmap?
 
     class GISQLRenderer : GIRenderer() {
-        override suspend fun render(
-            layer: GILayer,
-            area: GIBounds,
+        override suspend fun renderBitmap(
+            layer: Layer,
+            area: Bounds,
             opacity: Int,
-            bitmap: Bitmap,
+            rect: Rect,
             scale: Double
-        ) {
-            (layer as? GILayer.GISQLLayer)
+        ): Bitmap? {
+            return (layer as? Layer.SQLLayer)
                 ?.let { sqlLayer ->
-                    sqlLayer.properties?.sqldbProperties?.let { properties ->
+
+                    sqlLayer.sqldb.let { properties ->
                         val bounds = area.reproject(layer.projection)
-                        val widthPx = bitmap.width
+                        val widthPx = rect.width()
                         val kf: Double = 360.0 / (GITile.tilePx * properties.ratio)
                         val dz = ln(widthPx * kf / bounds.width) / ln(2.0)
 
-                        val z = dz.roundToInt()
-                        val zoom: Int = properties.getLevel(z)
+                        val zoom = dz.roundToInt()
+                        val z: Int = properties.getLevel(zoom)
 
-                        val koeffX: Float = (bitmap.width / (bounds.right - bounds.left)).toFloat()
-                        val koeffY: Float = (bitmap.height / (bounds.top - bounds.bottom)).toFloat()
+                        val koeffX: Float = (rect.width() / (bounds.right - bounds.left)).toFloat()
+                        val koeffY: Float = (rect.height() / (bounds.top - bounds.bottom)).toFloat()
+                        if ((properties.minZ < zoom || properties.maxZ > z))
+                            try {
 
-                        when {
-                            //todo very strange all Zooming types skipped
-                            properties.zoomingType == ZoomingType.AUTO && (properties.minZ > zoom || properties.maxZ < z) -> {}
-                            (properties.zoomingType == ZoomingType.SMART || properties.zoomingType == ZoomingType.ADAPTIVE) && (properties.minZ > zoom || properties.maxZ < z) -> {}
-                            else -> try {
-
+                                val bitmap = Bitmap.createBitmap(
+                                    rect.width(),
+                                    rect.height(),
+                                    Bitmap.Config.ARGB_8888
+                                )
                                 val canvas = Canvas(bitmap)
 
-                                sqlLayer.getTiles(bounds, z)
-                                    .forEach { tile ->
+                                val leftTop =
+                                    GITile.create(z, bounds.left, bounds.top, GILayerType.SQL_LAYER)
+                                val rightBottom =
+                                    GITile.create(
+                                        z,
+                                        bounds.right,
+                                        bounds.bottom,
+                                        GILayerType.SQL_LAYER
+                                    )
 
-                                        val sqlString = String.format(
-                                            "SELECT image FROM tiles WHERE x=%d AND y=%d AND z=%d",
-                                            tile.x,
-                                            tile.y,
-                                            17 - tile.z
-                                        )
-
-                                        val cursor: Cursor = sqlLayer.db.rawQuery(sqlString, null)
-                                        (if (cursor.moveToFirst()) {
-                                            var bitTile: Bitmap? = null
-                                            while (!cursor.isAfterLast) {
-                                                val blob = cursor.getBlob(0)
-                                                bitTile =
-                                                    BitmapFactory.decodeByteArray(
-                                                        blob,
-                                                        0,
-                                                        blob.size
-                                                    )
-                                                cursor.moveToNext()
-                                            }
-
-                                            bitTile
-                                        } else null)
-                                            .also { cursor.close() }
-                                            ?.let { bit ->
-
-                                                val src = Rect(0, 0, bit.width, bit.width)
-                                                val dst = RectF(
-                                                    ((tile.bounds.topLeft.lon - bounds.left) * koeffX).toFloat(),
-                                                    (bitmap.height - (tile.bounds.topLeft.lat - bounds.bottom) * koeffY).toFloat(),
-                                                    ((tile.bounds.bottomRight.lon - bounds.left) * koeffX).toFloat(),
-                                                    (bitmap.height - (tile.bounds.bottomRight.lat - bounds.bottom) * koeffY).toFloat()
+                                val sqlString = String.format(
+                                    "SELECT image, x, y FROM tiles WHERE (x >= %d AND x <= %d) AND (y >= %d AND y <= %d) AND z = %d",
+                                    leftTop.x,
+                                    rightBottom.x,
+                                    leftTop.y,
+                                    rightBottom.y,
+                                    17 - z
+                                )
+                                sqlLayer.db?.rawQuery(sqlString, null)
+                                    ?.let { cursor ->
+                                        while (cursor.moveToNext()) {
+                                            val blob = cursor.getBlob(0)
+                                            val bitTile =
+                                                BitmapFactory.decodeByteArray(
+                                                    blob,
+                                                    0,
+                                                    blob.size
                                                 )
-
-                                                canvas.drawBitmap(bit, src, dst, null)
-                                            }
-
+                                            val x = cursor.getInt(1)
+                                            val y = cursor.getInt(2)
+                                            val tile = GITile.GISQLYandexTile(x, y, z)
+                                            //
+                                            val src = Rect(0, 0, bitTile.width, bitTile.width)
+                                            val dst = RectF(
+                                                ((tile.bounds.topLeft.lon - bounds.left) * koeffX).toFloat(),
+                                                (bitmap.height - (tile.bounds.topLeft.lat - bounds.bottom) * koeffY).toFloat(),
+                                                ((tile.bounds.bottomRight.lon - bounds.left) * koeffX).toFloat(),
+                                                (bitmap.height - (tile.bounds.bottomRight.lat - bounds.bottom) * koeffY).toFloat()
+                                            )
+                                            canvas.drawBitmap(bitTile, src, dst, null)
+                                        }
+                                        cursor.close()
                                     }
+                                bitmap
 
                             } catch (e: Exception) {
                                 e.printStackTrace()
+                                null
                             }
-                        }
+                        else null
                     }
-
                 }
         }
+    }
 
-        override fun renderImage(
-            layer: GILayer,
-            area: GIBounds,
+    class GIXMLRenderer : GIRenderer() {
+        override suspend fun renderBitmap(
+            layer: Layer,
+            area: Bounds,
             opacity: Int,
-            bitmap: Bitmap,
+            rect: Rect,
             scale: Double
-        ) {
-//            (layer as? GILayer.GISQLLayer)
-            GILayer.sqlTest
-                .let { sqlLayer ->
-                    sqlLayer.properties?.sqldbProperties?.let { properties ->
-                        val bounds = area.reproject(layer.projection)
-                        val widthPx = bitmap.width
-                        val kf: Double = 360.0 / (GITile.tilePx * properties.ratio)
-                        val dz = ln(widthPx * kf / bounds.width) / ln(2.0)
+        ): Bitmap? {
+            return null
+        }
+    }
 
-                        val z = dz.roundToInt()
-                        val zoom: Int = properties.getLevel(z)
-
-                        val koeffX: Float = (bitmap.width / (bounds.right - bounds.left)).toFloat()
-                        val koeffY: Float = (bitmap.height / (bounds.top - bounds.bottom)).toFloat()
-
-                        when {
-                            //todo very strange all Zooming types skipped
-                            properties.zoomingType == ZoomingType.AUTO && (properties.minZ > zoom || properties.maxZ < z) -> {}
-                            (properties.zoomingType == ZoomingType.SMART || properties.zoomingType == ZoomingType.ADAPTIVE) && (properties.minZ > zoom || properties.maxZ < z) -> {}
-                            else -> try {
-
-                                val canvas = Canvas(bitmap)
-
-                                sqlLayer.getTiles(bounds, z)
-                                    .forEach { tile ->
-                                        val sqlString = String.format(
-                                            "SELECT image FROM tiles WHERE x=%d AND y=%d AND z=%d",
-                                            tile.x,
-                                            tile.y,
-                                            17 - tile.z
-                                        )
-
-                                        val cursor: Cursor = sqlLayer.db.rawQuery(sqlString, null)
-                                        (if (cursor.moveToFirst()) {
-                                            var bitTile: Bitmap? = null
-                                            while (!cursor.isAfterLast) {
-                                                val blob = cursor.getBlob(0)
-                                                bitTile =
-                                                    BitmapFactory.decodeByteArray(
-                                                        blob,
-                                                        0,
-                                                        blob.size
-                                                    )
-                                                cursor.moveToNext()
-                                            }
-
-                                            bitTile
-                                        } else null)
-                                            .also { cursor.close() }
-                                            ?.let { bit ->
-
-                                                val src = Rect(0, 0, bit.width, bit.width)
-                                                val dst = RectF(
-                                                    ((tile.bounds.topLeft.lon - bounds.left) * koeffX).toFloat(),
-                                                    (bitmap.height - (tile.bounds.topLeft.lat - bounds.bottom) * koeffY).toFloat(),
-                                                    ((tile.bounds.bottomRight.lon - bounds.left) * koeffX).toFloat(),
-                                                    (bitmap.height - (tile.bounds.bottomRight.lat - bounds.bottom) * koeffY).toFloat()
-                                                )
-
-                                                canvas.drawBitmap(bit, src, dst, null)
-                                            }
-
-                                    }
-
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                    }
-                }
+    class GIOnlineRenderer : GIRenderer() {
+        override suspend fun renderBitmap(
+            layer: Layer,
+            area: Bounds,
+            opacity: Int,
+            rect: Rect,
+            scale: Double
+        ): Bitmap? {
+            return null
         }
     }
 }

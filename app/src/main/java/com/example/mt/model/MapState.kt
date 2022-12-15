@@ -1,10 +1,10 @@
 package com.example.mt.model
 
 import android.graphics.Rect
-import com.example.mt.model.gi.GIBounds
+import com.example.mt.model.gi.Bounds
 
 data class MapState(
-    val bounds: GIBounds,
+    val bounds: Bounds,
     val viewRect: Rect,
 //    val position: Location,
     val zoom: Float,
@@ -12,6 +12,7 @@ data class MapState(
 ) {
     val pixelWidth = bounds.width / viewRect.width()
     val pixelHeight = bounds.height / viewRect.height()
+    val ratio = viewRect.width().toDouble() / viewRect.height().toDouble()
 
     companion object {
 

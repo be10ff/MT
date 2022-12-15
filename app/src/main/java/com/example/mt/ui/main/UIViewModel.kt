@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.mt.model.MainState
 import com.example.mt.model.MapState
 import com.example.mt.model.UIAction
-import com.example.mt.model.gi.GIBounds
-import com.example.mt.model.gi.GIProjection
+import com.example.mt.model.gi.Bounds
+import com.example.mt.model.gi.Projection
 import kotlinx.coroutines.launch
 
 @Deprecated("useless")
@@ -22,13 +22,13 @@ class UIViewModel : ViewModel() {
                     location = null,
                     storageGranted = false,
                     mapState = MapState(
-                        bounds = GIBounds(
-                            GIProjection.WGS84,
+                        bounds = Bounds(
+                            Projection.WGS84,
                             28.0,
                             65.0,
                             48.0,
                             46.0
-                        ).reproject(GIProjection.WorldMercator),
+                        ).reproject(Projection.WorldMercator),
 //                        position = Location(),
                         zoom = 1f,
                         viewRect = Rect(),

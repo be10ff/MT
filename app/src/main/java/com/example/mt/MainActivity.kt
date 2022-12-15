@@ -1,11 +1,20 @@
 package com.example.mt
 
 import android.Manifest
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.mt.model.Action
@@ -15,10 +24,12 @@ import com.example.mt.ui.main.MainViewModel
 import com.nabinbhandari.android.permissions.PermissionHandler
 import com.nabinbhandari.android.permissions.Permissions
 
+
 class MainActivity : AppCompatActivity() {
     lateinit var mainViewModel: MainViewModel
     private var locationAlertDialog: AlertDialog? = null
     private var storageAlertDialog: AlertDialog? = null
+    private var manageFilesAlertDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +43,7 @@ class MainActivity : AppCompatActivity() {
 
         subscribeToLocationPermissionListener()
         subscribeToReadStoragePermissionListener()
+        subscribeToManageFilesPermissionListener()
         //Move
         mainViewModel.gpsDataLiveData.observe(this, gpsObserver)
     }
@@ -50,6 +62,13 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun subscribeToManageFilesPermissionListener() {
+        mainViewModel.manageFilesPermissionStatusLiveData.observe(
+            this,
+            manageFilesPermissionObserver
+        )
+    }
+
     private val locationPermissionObserver = Observer<PermissionStatus> { status ->
         status?.let {
             when (status) {
@@ -65,6 +84,19 @@ class MainActivity : AppCompatActivity() {
             when (status) {
                 is PermissionStatus.Denied -> showReadStoragePermissionNeededDialog()
                 else -> {}
+            }
+        }
+    }
+
+    private val manageFilesPermissionObserver = Observer<PermissionStatus> { status ->
+        status?.let {
+            when (status) {
+                is PermissionStatus.Denied -> showManageFilesPermissionNeededDialog()
+                else -> {
+                    //todo
+                    mainViewModel.submitAction(Action.GPSAction.StorageGranted(true))
+//                    this.getDir("gimaps", MODE_WORLD_READABLE&MODE_WORLD_WRITEABLE&MODE_APPEND)
+                }
             }
         }
     }
@@ -137,5 +169,82 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun showManageFilesPermissionNeededDialog() {
+        if (manageFilesAlertDialog?.isShowing == true) return
 
+        manageFilesAlertDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.permission_required_title)
+            .setMessage(R.string.permission_required_message)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+//                Permissions.check(
+//                    this,
+////                    ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+//                    MANAGE_EXTERNAL_STORAGE,
+//                    null,
+//                    storagePermissionHandler
+//                )
+                requestPermission()
+            }
+            .create()
+        manageFilesAlertDialog?.apply { show() }
+
+    }
+
+    private fun requestPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.addCategory("android.intent.category.DEFAULT")
+                intent.data = Uri.parse(String.format("package:%s", applicationContext.packageName))
+                startActivityForResult(intent, 2296)
+            } catch (e: Exception) {
+                val intent = Intent()
+                intent.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                startActivityForResult(intent, 2296)
+            }
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(WRITE_EXTERNAL_STORAGE),
+                PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when (requestCode) {
+            PERMISSION_REQUEST_CODE -> if (grantResults.size > 0) {
+//                val READ_EXTERNAL_STORAGE = grantResults[0] == PackageManager.PERMISSION_GRANTED
+//                val WRITE_EXTERNAL_STORAGE = grantResults[1] == PackageManager.PERMISSION_GRANTED
+                val WRITE_EXTERNAL_STORAGE = grantResults[0] == PackageManager.PERMISSION_GRANTED
+                if (/*READ_EXTERNAL_STORAGE &&*/ WRITE_EXTERNAL_STORAGE) {
+                    // perform action when allow permission success
+                } else {
+                    Toast.makeText(this, "Allow permission for storage access!", Toast.LENGTH_SHORT)
+                        .show()
+                }
+                mainViewModel.submitAction(Action.GPSAction.StorageGranted(WRITE_EXTERNAL_STORAGE))
+            }
+
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 2296) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    mainViewModel.submitAction(Action.GPSAction.StorageGranted(true))
+                }
+            }
+        }
+    }
+
+    companion object {
+        val PERMISSION_REQUEST_CODE = 11
+    }
 }

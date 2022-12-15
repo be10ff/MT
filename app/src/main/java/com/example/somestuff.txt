@@ -1,0 +1,17 @@
+<Project name="YarilinaPlesh" SaveAs="YarilinaPlesh.pro">
+   <Bounds bottom="56.7455951576742" left="38.526824200875275" projection="WGS84" right="39.017741885987796" top="56.88694295354085"/>
+   <Description text="YarilinaPlesh"/>
+   <Group enabled="true" name="" opacity="0.0">
+      <Layer enabled="true" name="Worlds.sqlitedb" type="SQL_YANDEX_LAYER">
+         <Range from="233014197" to="888"/>
+         <Source location="absolute" name="/storage/emulated/0/Worlds.sqlitedb"/>
+         <sqlitedb max="19" min="1" ratio="1" zoom_type="AUTO"/>
+      </Layer>
+      <Layer enabled="true" name="50rus.sqlitedb" type="SQL_YANDEX_LAYER">
+         <Range from="466028394" to="1777"/>
+         <Source location="absolute" name="/storage/emulated/0/50rus.sqlitedb"/>
+         <sqlitedb max="16" min="0" ratio="3" zoom_type="SMART"/>
+      </Layer>
+   </Group>
+   <Markers file="YarilinaPlesh_Nov_02_poi.xml" source="YarilinaPlesh_Nov_02_poi.xml"/>
+</Project>
