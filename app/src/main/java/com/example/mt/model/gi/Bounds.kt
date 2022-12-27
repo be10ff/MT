@@ -30,5 +30,13 @@ data class Bounds(
         return Bounds(projection, topLeft.lon, topLeft.lat, bottomRight.lon, bottomRight.lat)
     }
 
+    fun contains(point: GILonLat): Boolean {
+        return Projection.reproject(point, Projection.WGS84, projection)
+            .let {
+                it.lon in left..right && it.lat in bottom..top
+            }
+
+    }
+
     companion object
 }

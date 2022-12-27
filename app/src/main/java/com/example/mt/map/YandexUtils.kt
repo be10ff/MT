@@ -35,16 +35,16 @@ class YandexUtils {
 
             return GILonLat(Math.toDegrees(d), Math.toDegrees(l))
         }
-
-        fun tile2lon(x: Int, z: Int) = x / 2.0.pow(z) * 360 - 180
-        fun tile2lat(y: Int, z: Int) = Math.toDegrees(
-            atan(
-                sinh(
-                    Math.PI - 2 * Math.PI * y / 2.0.pow(
-                        z
-                    )
-                )
-            )
-        )
+//Moved to
+//        fun tile2lon(x: Int, z: Int) = x / 2.0.pow(z) * 360 - 180
+//        fun tile2lat(y: Int, z: Int) = Math.toDegrees(
+//            atan(
+//                sinh(
+//                    Math.PI - 2 * Math.PI * y / 2.0.pow(
+//                        z
+//                    )
+//                )
+//            )
+//        )
     }
 }

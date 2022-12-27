@@ -16,10 +16,10 @@ import com.example.mt.functional.ErrorHandlerManager
 import com.example.mt.model.Action
 import com.example.mt.model.MainState
 import com.example.mt.model.MapState
-import com.example.mt.model.ProjectMapper
 import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.Project
 import com.example.mt.model.gi.Projection
+import com.example.mt.model.mapper.ProjectMapper
 import com.example.mt.model.xml.GIPropertiesProject
 import kotlinx.coroutines.launch
 import org.simpleframework.xml.Serializer
@@ -296,7 +296,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val serializer: Serializer = Persister()
             val mapper = ProjectMapper()
-            val input = File("storage/emulated/0/YarilinaPlesh.pro")
+            val input = File("storage/emulated/0/razan.pro")
             if (input.exists()) {
                 serializer.read(GIPropertiesProject::class.java, input)
                     .let {

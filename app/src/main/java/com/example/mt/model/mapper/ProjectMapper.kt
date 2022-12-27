@@ -1,9 +1,12 @@
-package com.example.mt.model
+package com.example.mt.model.mapper
 
+import com.example.mt.map.layer.SQLLayer
+import com.example.mt.map.layer.TrafficLayer
+import com.example.mt.map.layer.XMLLayer
 import com.example.mt.model.gi.Bounds
-import com.example.mt.model.gi.Layer
 import com.example.mt.model.gi.Project
 import com.example.mt.model.gi.Projection
+import com.example.mt.model.gi.VectorStyle
 import com.example.mt.model.xml.*
 
 class ProjectMapper {
@@ -24,7 +27,7 @@ class ProjectMapper {
             layers = from.group.layers
                 .map {
                     when (it.type) {
-                        GILayerType.XML -> Layer.XMLLayer(
+                        GILayerType.XML -> XMLLayer(
                             name = it.name,
                             type = it.type,
                             enabled = it.enabled,
@@ -32,12 +35,14 @@ class ProjectMapper {
                             sourceLocation = it.source.location,
                             rangeFrom = it.range.from.toIntOrNull(),
                             rangeTo = it.range.to.toIntOrNull(),
-                            style = it.style!!,
+                            //todo
+//                            style =  it.style!!,
+                            style = VectorStyle.default,
                             editableType = it.editable?.type,
                             activeEdiable = it.editable?.active
                         )
 
-                        GILayerType.ON_LINE -> Layer.TrafficLayer(
+                        GILayerType.ON_LINE -> TrafficLayer(
                             name = it.name,
                             type = it.type,
                             enabled = it.enabled,
@@ -47,7 +52,7 @@ class ProjectMapper {
                             rangeTo = it.range.to.toIntOrNull(),
                         )
 
-                        else -> Layer.SQLLayer(
+                        else -> SQLLayer(
                             name = it.name,
                             type = it.type,
                             enabled = it.enabled,
@@ -83,13 +88,15 @@ class ProjectMapper {
                                 name = it.source,
                                 location = it.sourceLocation
                             ),
-                            sqlDb = (it as? Layer.SQLLayer)?.sqldb,
-                            style = (it as? Layer.XMLLayer)?.style,
+                            sqlDb = (it as? SQLLayer)?.sqldb,
+                            //todo
+//                            style = (it as? XMLLayer)?.style,
+                            style = null,
                             range = GIRange(
                                 from = it.rangeFrom?.toString() ?: "NAN",
                                 to = it.rangeTo?.toString() ?: "NAN"
                             ),
-                            editable = (it as? Layer.XMLLayer)?.let { xmlProperties ->
+                            editable = (it as? XMLLayer)?.let { xmlProperties ->
                                 xmlProperties.editableType?.let { type ->
                                     xmlProperties.activeEdiable?.let { active ->
                                         GIEditable(
