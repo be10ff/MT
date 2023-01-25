@@ -43,7 +43,9 @@ open class GISQLYandexTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
 
     override fun url(): String {
         val unixTime = System.currentTimeMillis() / 1000
-        return "http://jgo.maps.yandex.net/1.1/tiles?l=trf,trfl&lang=ru_RU&x={$x}&y={$y}&z={$z}&tm={$unixTime}"
+        return "http://tile.openstreetmap.org/$z/$x/$y.png"
+//        http://tile.openstreetmap.org/2/1/1.png
+//        return "http://jgo.maps.yandex.net/1.1/tiles?l=trf,trfl&lang=ru_RU&x=$x&y=$y&z=$z&tm=$unixTime"
     }
 
     companion object {

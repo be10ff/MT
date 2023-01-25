@@ -4,6 +4,7 @@ import android.graphics.Rect
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mt.model.ButtonState
 import com.example.mt.model.MainState
 import com.example.mt.model.MapState
 import com.example.mt.model.UIAction
@@ -18,7 +19,7 @@ class UIViewModel : ViewModel() {
             postValue(
                 MainState(
                     gpsState = false,
-                    buttonState = false,
+                    buttonState = ButtonState.InitialState,
                     location = null,
                     storageGranted = false,
                     mapState = MapState(
@@ -42,7 +43,13 @@ class UIViewModel : ViewModel() {
     fun submitAction(action: UIAction) {
         when (action) {
             is UIAction.ToggleGps -> updateState { it.copy(gpsState = !it.gpsState) }
-            is UIAction.ToggleTracking -> updateState { it.copy(buttonState = !it.buttonState) }
+            is UIAction.ToggleTracking -> updateState {
+                it.copy(
+                    buttonState = it.buttonState.copy(
+                        writeTrack = !it.buttonState.writeTrack
+                    )
+                )
+            }
 //            is UIAction.LocationUpdated -> {
 //                updateState{it.copy(location = action.location)}
 //            }

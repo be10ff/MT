@@ -2,11 +2,15 @@ package com.example.mt.map.layer
 
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.os.Environment
 import com.example.mt.map.renderer.GIRenderer
 import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.Projection
+import com.example.mt.model.gi.VectorStyle
+import com.example.mt.model.xml.EditableType
 import com.example.mt.model.xml.GILayerType
 import com.example.mt.model.xml.SourceLocation
+import java.io.File
 
 sealed class Layer(
     val name: String?,
@@ -23,9 +27,50 @@ sealed class Layer(
         area: Bounds,
         rect: Rect,
         opacity: Int,
-        scale: Double
+        scale: Float
     ): Bitmap?
 
+    companion object {
+        fun createPoiLayer(project: String, fileName: String): XMLLayer {
+            val dir =
+                File(Environment.getExternalStorageDirectory().absolutePath + File.separator + project)
+            if (!dir.exists()) dir.mkdir()
+            val layer = XMLLayer(
+                name = fileName,
+                type = GILayerType.XML,
+                enabled = true,
+                source = Environment.getExternalStorageDirectory().absolutePath + File.separator + project + File.separator + fileName,
+                sourceLocation = SourceLocation.absolute,
+                rangeFrom = null,
+                rangeTo = null,
+                editableType = EditableType.POI,
+                activeEdiable = true,
+                style = VectorStyle.default
+            )
+
+            return layer
+        }
+
+        fun createTrackLayer(project: String, fileName: String): XMLLayer {
+            val dir =
+                File(Environment.getExternalStorageDirectory().absolutePath + File.separator + project)
+            if (!dir.exists()) dir.mkdir()
+            val layer = XMLLayer(
+                name = fileName,
+                type = GILayerType.XML,
+                enabled = true,
+                source = Environment.getExternalStorageDirectory().absolutePath + File.separator + project + File.separator + fileName,
+                sourceLocation = SourceLocation.absolute,
+                rangeFrom = null,
+                rangeTo = null,
+                editableType = EditableType.TRACK,
+                activeEdiable = true,
+                style = VectorStyle.default
+            )
+
+            return layer
+        }
+    }
 //    class SQLLayer(
 //        name: String?,
 //        type: GILayerType,

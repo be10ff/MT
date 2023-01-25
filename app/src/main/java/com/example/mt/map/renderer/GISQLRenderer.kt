@@ -19,7 +19,7 @@ class GISQLRenderer : GIRenderer() {
         area: Bounds,
         opacity: Int,
         rect: Rect,
-        scale: Double
+        scale: Float
     ): Bitmap? {
         return (layer as? SQLLayer)
             ?.let { sqlLayer ->

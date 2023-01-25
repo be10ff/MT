@@ -5,7 +5,9 @@ import android.graphics.Rect
 import com.example.mt.map.Screen
 import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.VectorStyle
+import java.io.BufferedWriter
 import java.io.File
+import kotlin.math.hypot
 import kotlin.streams.asSequence
 
 data class WktTrack(
@@ -15,6 +17,8 @@ data class WktTrack(
     override val status: WKTGeometryStatus = WKTGeometryStatus.NEW
     override val attributes: MutableMap<String, DBaseField> = mutableMapOf()
     val points = mutableListOf<WktPoint>()
+
+//    private var writer: BufferedWriter? = null
 
     init {
         File(file).bufferedReader().lines()
@@ -27,6 +31,14 @@ data class WktTrack(
             }
     }
 
+//    fun initOutput() {
+//        writer = File(file).bufferedWriter()
+//    }
+
+    private val writer: BufferedWriter by lazy {
+        File(file).bufferedWriter()
+    }
+
     override fun toWKT(): String {
         val file = File(file)
         return file.absolutePath
@@ -37,10 +49,21 @@ data class WktTrack(
         val rect = Rect(0, 0, canvas.width, canvas.height)
         val screen = Screen(rect, bounds)
         while (counter < points.size - 1) {
-            val prev = screen.toScreen(points[counter].point)
-            val current = screen.toScreen(points[counter + 1].point)
-            canvas.drawLine(prev.x, prev.y, current.x, current.y, style.pen)
-            counter++
+            var currentIndex = counter + 1
+            while (currentIndex < points.size - 1) {
+                val distance = hypot(
+                    points[currentIndex].inMap.lon - points[counter].inMap.lon,
+                    points[currentIndex].inMap.lat - points[counter].inMap.lat
+                )
+                if (distance > 5 * screen.pixelWeight) break
+                currentIndex += 1
+            }
+            if (bounds.contains(points[currentIndex].point) || bounds.contains(points[counter].point)) {
+                val prev = screen.toScreen(points[counter].point)
+                val current = screen.toScreen(points[currentIndex].point)
+                canvas.drawLine(prev.x, prev.y, current.x, current.y, style.pen)
+            }
+            counter = currentIndex
         }
     }
 
@@ -66,5 +89,23 @@ data class WktTrack(
 
     override fun isTouch(bounds: Bounds): Boolean {
         TODO("Not yet implemented")
+    }
+
+    fun stop() {
+        try {
+            writer.flush()
+            writer.close()
+
+        } catch (e: Exception) {
+        }
+    }
+
+    fun append(line: String) {
+        try {
+            writer.write(line)
+            writer.newLine()
+            writer.flush()
+        } catch (e: Exception) {
+        }
     }
 }

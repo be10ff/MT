@@ -39,7 +39,7 @@ class EditableLayer(
         area: Bounds,
         rect: Rect,
         opacity: Int,
-        scale: Double
+        scale: Float
     ): Bitmap? {
         TODO("Not yet implemented")
     }

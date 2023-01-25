@@ -11,7 +11,7 @@ sealed class GIRenderer {
         area: Bounds,
         opacity: Int,
         rect: Rect,
-        scale: Double
+        scale: Float
     ): Bitmap?
 
 }

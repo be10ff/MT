@@ -26,6 +26,13 @@ sealed class Action {
 
     sealed class ProjectAction : Action() {
         data class Load(val source: String) : ProjectAction()
+        object Save : ProjectAction()
+    }
+
+    sealed class ButtonAction : Action() {
+        object WriteTrack : ButtonAction()
+        object FollowPosition : ButtonAction()
+        object AddPosition : ButtonAction()
     }
 
 }

@@ -17,6 +17,7 @@ class Screen(val rect: Rect, val bounds: Bounds) {
 
     val koeffX: Float = (rect.width() / (bounds.right - bounds.left)).toFloat()
     val koeffY: Float = (rect.height() / (bounds.top - bounds.bottom)).toFloat()
+    val pixelWeight = (bounds.right - bounds.left) / rect.width().toFloat()
 
     fun toScreen(point: GILonLat): PointF {
         val mapPoint = Projection.reproject(point, Projection.WGS84, bounds.projection)

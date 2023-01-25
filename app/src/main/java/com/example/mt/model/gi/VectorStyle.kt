@@ -20,7 +20,7 @@ data class VectorStyle(
         val line = Paint().apply {
             color = Color.RED
             style = Paint.Style.STROKE
-            strokeWidth = 1f
+            strokeWidth = 3f
         }
 
         //        val point = BitmapFactory.decodeResource(Resources.getSystem(), R.drawable.measure_point)
@@ -33,5 +33,6 @@ data class VectorStyle(
         }
 
         val default = VectorStyle(line, fill, 0, bitmap)
+
     }
 }

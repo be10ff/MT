@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.main_activity)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
@@ -95,7 +97,6 @@ class MainActivity : AppCompatActivity() {
                 else -> {
                     //todo
                     mainViewModel.submitAction(Action.GPSAction.StorageGranted(true))
-//                    this.getDir("gimaps", MODE_WORLD_READABLE&MODE_WORLD_WRITEABLE&MODE_APPEND)
                 }
             }
         }
@@ -176,13 +177,6 @@ class MainActivity : AppCompatActivity() {
             .setTitle(R.string.permission_required_title)
             .setMessage(R.string.permission_required_message)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-//                Permissions.check(
-//                    this,
-////                    ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-//                    MANAGE_EXTERNAL_STORAGE,
-//                    null,
-//                    storagePermissionHandler
-//                )
                 requestPermission()
             }
             .create()
@@ -218,10 +212,8 @@ class MainActivity : AppCompatActivity() {
     ) {
         when (requestCode) {
             PERMISSION_REQUEST_CODE -> if (grantResults.size > 0) {
-//                val READ_EXTERNAL_STORAGE = grantResults[0] == PackageManager.PERMISSION_GRANTED
-//                val WRITE_EXTERNAL_STORAGE = grantResults[1] == PackageManager.PERMISSION_GRANTED
                 val WRITE_EXTERNAL_STORAGE = grantResults[0] == PackageManager.PERMISSION_GRANTED
-                if (/*READ_EXTERNAL_STORAGE &&*/ WRITE_EXTERNAL_STORAGE) {
+                if (WRITE_EXTERNAL_STORAGE) {
                     // perform action when allow permission success
                 } else {
                     Toast.makeText(this, "Allow permission for storage access!", Toast.LENGTH_SHORT)

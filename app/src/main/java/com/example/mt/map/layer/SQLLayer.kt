@@ -53,7 +53,7 @@ class SQLLayer(
         area: Bounds,
         rect: Rect,
         opacity: Int,
-        scale: Double
+        scale: Float
     ): Bitmap? {
         return Mutex().withLock {
             renderer.renderBitmap(this, area, opacity, rect, scale)

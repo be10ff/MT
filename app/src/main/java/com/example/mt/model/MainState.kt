@@ -4,7 +4,7 @@ import android.location.Location
 
 data class MainState(
     val gpsState: Boolean,
-    val buttonState: Boolean,
+    val buttonState: ButtonState,
     val location: Location?,
     val storageGranted: Boolean,
     val mapState: MapState

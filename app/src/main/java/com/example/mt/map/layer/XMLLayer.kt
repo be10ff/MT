@@ -9,6 +9,7 @@ import com.example.mt.map.wkt.WktLayer
 import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.Projection
 import com.example.mt.model.gi.VectorStyle
+import com.example.mt.model.mapper.LayerMapper
 import com.example.mt.model.xml.EditableType
 import com.example.mt.model.xml.GILayerType
 import com.example.mt.model.xml.SourceLocation
@@ -42,18 +43,26 @@ class XMLLayer(
 ) {
     val geometries =
         try {
-            serializer.read(WktLayer::class.java, File(source)).geometry
+            serializer.read(WktLayer::class.java, File(source)).geometry.toMutableList()
         } catch (e: Exception) {
             mutableListOf<WktGeometry>()
         }
 
+    val mapper = LayerMapper()
     override suspend fun renderBitmap(
         area: Bounds,
         rect: Rect,
         opacity: Int,
-        scale: Double
+        scale: Float
     ): Bitmap? {
         return renderer.renderBitmap(this, area, opacity, rect, scale)
+    }
+
+    fun save() {
+        val output = File(source)
+        if (!output.exists()) output.createNewFile()
+        val xmlLayer = mapper.mapFrom(this)
+        serializer.write(xmlLayer, output)
     }
 
     companion object {

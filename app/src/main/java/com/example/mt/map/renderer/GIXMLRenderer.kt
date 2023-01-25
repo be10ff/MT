@@ -14,7 +14,7 @@ class GIXMLRenderer : GIRenderer() {
         area: Bounds,
         opacity: Int,
         rect: Rect,
-        scale: Double
+        scale: Float
     ): Bitmap? {
         val bitmap = Bitmap.createBitmap(
             rect.width(),
@@ -27,7 +27,7 @@ class GIXMLRenderer : GIRenderer() {
                 xmlLayer.geometries
                     .map { geometry: WktGeometry ->
                         //todo
-                        geometry.draw(canvas, area, 1f, xmlLayer.style)
+                        geometry.draw(canvas, area, scale, xmlLayer.style)
                     }
             }
 

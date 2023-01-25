@@ -11,6 +11,7 @@ data class Bounds(
     val bottomRight = GILonLat(right, bottom)
     val height = top - bottom
     val width = right - left
+    val center = GILonLat((left + right) / 2, (top + bottom) / 2)
 
 //    fun intesect(bounds: GIBounds): Boolean {
 //        TODO("Not yet implemented")
@@ -37,6 +38,7 @@ data class Bounds(
             }
 
     }
+
 
     companion object
 }
