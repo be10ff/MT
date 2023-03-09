@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Rect
+import com.example.mt.map.MapUtils
 import com.example.mt.map.Screen
 import com.example.mt.map.layer.Layer
 import com.example.mt.map.layer.SQLLayer
@@ -24,6 +25,7 @@ class GISQLRenderer : GIRenderer() {
         return (layer as? SQLLayer)
             ?.let { sqlLayer ->
 
+
                 sqlLayer.sqldb.let { properties ->
                     val bounds = area.reproject(layer.projection)
                     val widthPx = rect.width()
@@ -33,7 +35,10 @@ class GISQLRenderer : GIRenderer() {
                     val zoom = dz.roundToInt()
                     val z: Int = properties.getLevel(zoom)
                     val screen = Screen(rect, bounds)
-                    if ((properties.minZ < zoom || properties.maxZ > z))
+                    val minScale = MapUtils.scale2z(sqlLayer.rangeTo ?: 0)
+                    val maxScale = MapUtils.scale2z(sqlLayer.rangeFrom ?: 0)
+
+                    if ((minScale <= zoom && maxScale >= zoom))
                         try {
 
                             val bitmap = Bitmap.createBitmap(
@@ -44,23 +49,17 @@ class GISQLRenderer : GIRenderer() {
                             val canvas = Canvas(bitmap)
 
                             val leftTop =
-                                GITile.create(z, bounds.left, bounds.top, layer.type)
+                                GITile.create(z, bounds.left, bounds.top, layer.sqlProjection)
                             val rightBottom =
                                 GITile.create(
                                     z,
                                     bounds.right,
                                     bounds.bottom,
-                                    layer.type
+                                    layer.sqlProjection
                                 )
 
-                            val sqlString = String.format(
-                                "SELECT image, x, y FROM tiles WHERE (x >= %d AND x <= %d) AND (y >= %d AND y <= %d) AND z = %d",
-                                leftTop.x,
-                                rightBottom.x,
-                                leftTop.y,
-                                rightBottom.y,
-                                17 - z
-                            )
+                            val sqlString =
+                                "SELECT image, x, y FROM tiles WHERE (x >= ${leftTop.x} AND x <= ${rightBottom.x}) AND (y >= ${leftTop.y} AND y <= ${rightBottom.x}) AND z = ${17 - z}"
                             sqlLayer.db?.rawQuery(sqlString, null)
                                 ?.let { cursor ->
                                     while (cursor.moveToNext()) {
@@ -74,8 +73,14 @@ class GISQLRenderer : GIRenderer() {
                                         val x = cursor.getInt(1)
                                         val y = cursor.getInt(2)
                                         //todo
-                                        // GITile.create(z, bounds.left, bounds.top, layer.type)
-                                        val tile = GISQLYandexTile(x, y, z)
+                                        val _tile = GITile.create(
+                                            z,
+                                            bounds.left,
+                                            bounds.top,
+                                            layer.sqlProjection
+                                        )
+                                        val tile = GITile.create(x, y, z, layer.sqlProjection)
+                                        val __tile = GISQLYandexTile(x, y, z)
                                         //
                                         val src = Rect(0, 0, bitTile.width, bitTile.width)
                                         val dst = screen.toScreen(tile.bounds)

@@ -7,5 +7,13 @@ data class MainState(
     val buttonState: ButtonState,
     val location: Location?,
     val storageGranted: Boolean,
-    val mapState: MapState
-)
+) {
+    companion object {
+        val InitialState = MainState(
+            gpsState = false,
+            buttonState = ButtonState.InitialState,
+            location = null,
+            storageGranted = false,
+        )
+    }
+}

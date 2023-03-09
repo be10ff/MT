@@ -8,8 +8,4 @@ data class GISource constructor(
     @field:Attribute(name = "name")
     @param:Attribute(name = "name")
     var name: String,
-
-    @field:Attribute(name = "location")
-    @param:Attribute(name = "location")
-    var location: SourceLocation
 )

@@ -2,6 +2,8 @@ package com.example.mt.model.xml
 
 import org.simpleframework.xml.Attribute
 import org.simpleframework.xml.Root
+import java.lang.Integer.max
+import java.lang.Math.min
 
 @Root(name = "sqlitedb", strict = false)
 data class GISQLDB constructor(
@@ -26,8 +28,7 @@ data class GISQLDB constructor(
         return when (zoomingType) {
             ZoomingType.SMART -> lvl
             ZoomingType.AUTO -> {
-//                min(max(lvl, minZ), maxZ)
-                lvl
+                min(max(lvl, minZ), maxZ)
             }
             else -> lvl
         }

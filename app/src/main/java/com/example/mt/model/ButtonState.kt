@@ -3,7 +3,7 @@ package com.example.mt.model
 data class ButtonState(
     val follow: Boolean,
     val showTrack: Boolean,
-    val writeTrack: Boolean,
+    val writeTrack: TrackState,
 
     val editGeometry: Boolean,
     val deleteGeometry: Boolean
@@ -13,7 +13,7 @@ data class ButtonState(
         val InitialState = ButtonState(
             follow = false,
             showTrack = false,
-            writeTrack = false,
+            writeTrack = TrackState.Stopped,
             editGeometry = false,
             deleteGeometry = false
         )

@@ -22,6 +22,10 @@ data class GIPropertiesLayer constructor(
     @param:Element(name = "Source")
     var source: GISource,
 
+    @field:Attribute(name = "sqlProjection", required = false)
+    @param:Attribute(name = "sqlProjection", required = false)
+    var sqlProjection: SqlProjection?,
+
     @field:Element(name = "sqlitedb", required = false)
     @param:Element(name = "sqlitedb", required = false)
     var sqlDb: GISQLDB?,

@@ -8,22 +8,20 @@ import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.Projection
 import com.example.mt.model.xml.GILayerType
 import com.example.mt.model.xml.GISQLDB
-import com.example.mt.model.xml.SourceLocation
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import com.example.mt.model.xml.SqlProjection
 import java.io.File
 
-class SQLLayer(
-    name: String?,
-    type: GILayerType,
-    enabled: Boolean,
-    source: String,
-    sourceLocation: SourceLocation,
-    rangeFrom: Int?,
-    rangeTo: Int?,
+data class SQLLayer(
+    override val name: String?,
+    override val type: GILayerType,
+    override val enabled: Boolean,
+    override val source: String,
+    override val rangeFrom: Int?,
+    override val rangeTo: Int?,
+    val sqlProjection: SqlProjection,
     val sqldb: GISQLDB
 ) : Layer(
-    name, type, enabled, source, sourceLocation, rangeFrom, rangeTo,
+    name, type, enabled, source, rangeFrom, rangeTo,
     Projection.WGS84, GISQLRenderer()
 ) {
 
@@ -32,8 +30,6 @@ class SQLLayer(
             val f = File(source)
             val res = f.canRead()
             SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY)
-
-
         } catch (e: Exception) {
             null
         }
@@ -55,8 +51,6 @@ class SQLLayer(
         opacity: Int,
         scale: Float
     ): Bitmap? {
-        return Mutex().withLock {
-            renderer.renderBitmap(this, area, opacity, rect, scale)
-        }
+        return renderer.renderBitmap(this, area, opacity, rect, scale)
     }
 }

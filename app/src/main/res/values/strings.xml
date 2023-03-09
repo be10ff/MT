@@ -8,4 +8,11 @@
     <string name="permission_status_bloked">Blocked</string>
     <string name="permission_required_title">Required</string>
     <string name="permission_required_message">permission required</string>
+    <string name="project_name">Name</string>
+    <string name="project_path">Path</string>
+    <string name="project_description">Description</string>
+    <string name="layer_tile_projection">Tile projection</string>
+    <string name="tile_projection_yandex">Yandex</string>
+    <string name="tile_projection_google">Google</string>
+
 </resources>

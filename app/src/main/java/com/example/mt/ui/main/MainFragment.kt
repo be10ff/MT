@@ -1,23 +1,36 @@
 package com.example.mt.ui.main
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Point
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.distinctUntilChanged
+import androidx.lifecycle.lifecycleScope
+import com.example.mt.MainActivity
 import com.example.mt.R
+import com.example.mt.functional.launchWhenStarted
 import com.example.mt.model.Action
-import com.example.mt.model.gi.Bounds
-import com.example.mt.model.gi.Projection
+import com.example.mt.model.BitmapState
+import com.example.mt.model.TrackState
 import com.example.mt.model.xml.GIBounds
-import com.example.mt.ui.dialog.SettingsDialog
+import com.example.mt.ui.dialog.settings.SettingsDialog
 import com.example.mt.ui.view.ControlListener
 import kotlinx.android.synthetic.main.main_fragment.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import java.io.File
 
 class MainFragment : Fragment(), ControlListener {
 
@@ -25,8 +38,20 @@ class MainFragment : Fragment(), ControlListener {
         fun newInstance() = MainFragment()
     }
 
-    //    private val uiViewModel: UIViewModel by activityViewModels()
-    private val mainViewModel: MainViewModel by activityViewModels()
+
+    private val fragmentViewModel: FragmentViewModel by activityViewModels()
+
+    private val startForResultProject =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    MainActivity.getRealPath(context, uri)
+                }?.let { fileName ->
+                    if (File(fileName).extension == "pro")
+                        fragmentViewModel.submitAction(Action.ProjectAction.Load(fileName))
+                }
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -35,10 +60,11 @@ class MainFragment : Fragment(), ControlListener {
         return inflater.inflate(R.layout.main_fragment, container, false)
     }
 
-    override fun onPause() {
-        super.onPause()
-        activity
-        mainViewModel.submitAction(Action.ProjectAction.Save)
+    override fun onStart() {
+        super.onStart()
+        CoroutineScope(Dispatchers.Main.immediate).launch {
+
+        }
     }
 
     @InternalCoroutinesApi
@@ -48,82 +74,95 @@ class MainFragment : Fragment(), ControlListener {
         setupGUI()
     }
 
+
     @InternalCoroutinesApi
     private fun setupObserve() {
+        fragmentViewModel.bitmapState
+            .filterIsInstance<BitmapState.Defined>()
+            .onEach { map.reDraw(it.bitmap) }
+            .launchWhenStarted(lifecycleScope)
 
-        mainViewModel.trackingState.observe(viewLifecycleOwner) { (location, buttonState) ->
-            buttonState?.let { buttons ->
-                location?.let { loc ->
-                    when {
-                        buttons.follow -> {
-
-                        }
-                        buttons.writeTrack -> {}
-                    }
+        fragmentViewModel.buttonState
+            .map { it.writeTrack }
+            .distinctUntilChanged()
+            .onEach { state ->
+                if (state is TrackState.Started) {
+                    btnWriteTrack.setImageResource(R.drawable.ic_stop_track)
+                } else {
+                    btnWriteTrack.setImageResource(R.drawable.ic_start_track)
                 }
             }
-        }
 
-        mainViewModel.bitmapState
+        fragmentViewModel.buttonState
+            .map { it.follow }
             .distinctUntilChanged()
-            .observeForever {
-                map.reDraw(it)
-            }
-
-//        mainViewModel.projectState
-//            .distinctUntilChanged()
-//            .observeForever {
-//                mainViewModel.reDraw()
-//            }
-
-        mainViewModel.buttonState
-            .distinctUntilChanged()
-            .observeForever { state ->
-                if (state.writeTrack) btnWriteTrack.setImageResource(R.drawable.ic_stop_track) else btnWriteTrack.setImageResource(
-                    R.drawable.ic_start_track
-                )
-                if (state.follow) btnFollow.setImageResource(R.drawable.ic_follow_diableled) else btnFollow.setImageResource(
+            .onEach { state ->
+                if (state) btnFollow.setImageResource(R.drawable.ic_follow_diableled) else btnFollow.setImageResource(
                     R.drawable.ic_follow
                 )
-                if (state.editGeometry) btnEdit.setImageResource(R.drawable.ic_close) else btnEdit.setImageResource(
+            }
+
+        fragmentViewModel.buttonState
+            .map { it.editGeometry }
+            .distinctUntilChanged()
+            .onEach { state ->
+                if (state) btnEdit.setImageResource(R.drawable.ic_close) else btnEdit.setImageResource(
                     R.drawable.ic_edit
                 )
-                if (state.deleteGeometry) btnDelete.setImageResource(R.drawable.ic_close) else btnDelete.setImageResource(
+            }
+
+        fragmentViewModel.buttonState
+            .map { it.deleteGeometry }
+            .distinctUntilChanged()
+            .onEach { state ->
+                if (state) btnDelete.setImageResource(R.drawable.ic_close) else btnDelete.setImageResource(
                     R.drawable.ic_delete
                 )
+            }
+
+        fragmentViewModel.buttonState
+            .onEach { state ->
+//                if (state.writeTrack is TrackState.Started)  {
+//                    btnWriteTrack.setImageResource(R.drawable.ic_stop_track)
+//                    requireActivity().let{
+//                        val intent = Intent(it, TrackService::class.java)
+//                        intent.putExtra(TrackService.FILENAME, state.writeTrack.fileName)
+//                        startForegroundService(it, intent)
+//                    }
+//                } else {
+//                    btnWriteTrack.setImageResource(R.drawable.ic_start_track)
+//                    requireContext().let {
+//                        val intent = Intent(it, TrackService::class.java)
+//                        activity?.stopService(intent)
+//                    }
+//
+//                }
+//                if (state.follow) btnFollow.setImageResource(R.drawable.ic_follow_diableled) else btnFollow.setImageResource(
+//                    R.drawable.ic_follow
+//                )
+//                if (state.editGeometry) btnEdit.setImageResource(R.drawable.ic_close) else btnEdit.setImageResource(
+//                    R.drawable.ic_edit
+//                )
+//                if (state.deleteGeometry) btnDelete.setImageResource(R.drawable.ic_close) else btnDelete.setImageResource(
+//                    R.drawable.ic_delete
+//                )
             }
     }
 
     private fun setupGUI() {
         control.listener = this
-        mainViewModel.submitAction(Action.ProjectAction.Load(""))
+        val viewTreeObserver = map.viewTreeObserver
+        if (viewTreeObserver.isAlive) {
+            viewTreeObserver.addOnGlobalLayoutListener {
+                Rect(map.left, map.top, map.right, map.bottom)
+                    .takeIf {
+                        !it.isEmpty
+                    }?.let {
+                        fragmentViewModel.submitAction(Action.MapAction.ViewRectChanged(it))
+                    }
 
-        mainViewModel.submitAction(
-            Action.MapAction.BoundsChanged(
-                Bounds(
-                    Projection.WGS84,
-                    33.0,
-                    57.0,
-                    37.0,
-                    53.0
-                ).reproject(Projection.WorldMercator)
-            )
-        )
-
-        map.addOnLayoutChangeListener { v, left, top, right, bottom, _, _, _, _ ->
-            mainViewModel.submitAction(
-                Action.MapAction.InitViewRect(
-                    Rect(
-                        left,
-                        top,
-                        right,
-                        bottom
-                    )
-                )
-            )
-//            mainViewModel.submitAction(Action.MapAction.InitMapView(map.bitmap))
+            }
         }
-
         setupButtons()
     }
 
@@ -132,23 +171,19 @@ class MainFragment : Fragment(), ControlListener {
     }
 
     override fun moveViewBy(x: Int, y: Int) {
-        mainViewModel.submitAction(Action.MapAction.MoveViewBy(x, y))
+        fragmentViewModel.submitAction(Action.MapAction.MoveViewBy(x, y))
     }
 
     override fun scaleViewBy(focus: Point, scaleFactor: Float) {
-        mainViewModel.submitAction(Action.MapAction.ScaleMapBy(focus, scaleFactor))
+        fragmentViewModel.submitAction(Action.MapAction.ScaleMapBy(focus, scaleFactor))
     }
 
     override fun updateMap() {
-        mainViewModel.submitAction(Action.MapAction.Update)
+        fragmentViewModel.submitAction(Action.MapAction.Update)
     }
 
     override fun boundsChanged(bounds: GIBounds) {
 
-    }
-
-    override fun viewRectChanged(rect: Rect) {
-        mainViewModel.submitAction(Action.MapAction.ViewRectChanged(rect))
     }
 
     private fun setupButtons() {
@@ -175,21 +210,31 @@ class MainFragment : Fragment(), ControlListener {
 
         //fabGps
         btnWriteTrack.setOnClickListener {
-            mainViewModel.submitAction(Action.ButtonAction.WriteTrack)
+            fragmentViewModel.submitAction(Action.ButtonAction.WriteTrack)
         }
 
         btnFollow.setOnClickListener {
-            mainViewModel.submitAction(Action.ButtonAction.FollowPosition)
+            fragmentViewModel.submitAction(Action.ButtonAction.FollowPosition)
         }
 
 
         btnAddPoi.setOnClickListener {
-            mainViewModel.submitAction(Action.ButtonAction.AddPosition)
+            fragmentViewModel.submitAction(Action.ButtonAction.AddPosition)
         }
 
         btnOptions.setOnClickListener {
             SettingsDialog().show(childFragmentManager, SettingsDialog.TAG)
         }
+
+        btnOpenProject.setOnClickListener {
+            val intent = Intent(Intent.ACTION_GET_CONTENT)
+                .apply {
+                    type = "file/*"
+                }
+            startForResultProject.launch(intent)
+
+        }
+
 
 //        fabCompass
         btnMarkers
@@ -205,4 +250,5 @@ class MainFragment : Fragment(), ControlListener {
         btnClose
 
     }
+
 }

@@ -40,5 +40,13 @@ data class Bounds(
     }
 
 
-    companion object
+    companion object {
+        val InitialState = Bounds(
+            Projection.WGS84,
+            28.0,
+            65.0,
+            48.0,
+            46.0
+        ).reproject(Projection.WorldMercator)
+    }
 }

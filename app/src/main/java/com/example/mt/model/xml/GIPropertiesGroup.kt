@@ -18,7 +18,7 @@ data class GIPropertiesGroup @JvmOverloads constructor(
     @param:Attribute(name = "enabled")
     var enabled: Boolean = true,
 
-    @field:ElementList(inline = true)
-    @param:ElementList(inline = true)
-    val layers: List<GIPropertiesLayer>
+    @field:ElementList(inline = true, required = false)
+    @param:ElementList(inline = true, required = false)
+    val layers: List<GIPropertiesLayer> = emptyList()
 )

@@ -12,21 +12,19 @@ import com.example.mt.model.gi.VectorStyle
 import com.example.mt.model.mapper.LayerMapper
 import com.example.mt.model.xml.EditableType
 import com.example.mt.model.xml.GILayerType
-import com.example.mt.model.xml.SourceLocation
 import org.simpleframework.xml.Serializer
 import org.simpleframework.xml.convert.Registry
 import org.simpleframework.xml.convert.RegistryStrategy
 import org.simpleframework.xml.core.Persister
 import java.io.File
 
-class XMLLayer(
-    name: String?,
-    type: GILayerType,
-    enabled: Boolean,
-    source: String,
-    sourceLocation: SourceLocation,
-    rangeFrom: Int?,
-    rangeTo: Int?,
+data class XMLLayer(
+    override val name: String?,
+    override val type: GILayerType,
+    override val enabled: Boolean,
+    override val source: String,
+    override val rangeFrom: Int?,
+    override val rangeTo: Int?,
     val style: VectorStyle,
     val editableType: EditableType?,
     val activeEdiable: Boolean?
@@ -35,7 +33,6 @@ class XMLLayer(
     type,
     enabled,
     source,
-    sourceLocation,
     rangeFrom,
     rangeTo,
     Projection.WGS84,
@@ -65,6 +62,13 @@ class XMLLayer(
         serializer.write(xmlLayer, output)
     }
 
+//    override fun copy_deep(update: (Layer) -> Layer): Layer {
+//        return update(this)
+//    }
+
+    //    private fun updateProjectState(update: (Project) -> Project) {
+    //        projectState.value.let { viewModelScope.launch { projectState.value = update(it) } }
+    //    }
     companion object {
         val registry = Registry()
         val strategy = RegistryStrategy(registry)

@@ -1,7 +1,6 @@
 package com.example.mt.ui.view
 
 import android.graphics.Point
-import android.graphics.Rect
 import com.example.mt.model.xml.GIBounds
 
 interface ControlListener {
@@ -12,6 +11,6 @@ interface ControlListener {
     //    fun invalidate()
     fun updateMap()
     fun boundsChanged(bounds: GIBounds)
-    fun viewRectChanged(rect: Rect)
+//    fun viewRectChanged(rect: Rect)
 
 }

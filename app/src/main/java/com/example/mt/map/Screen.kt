@@ -15,6 +15,7 @@ class Screen(val rect: Rect, val bounds: Bounds) {
         bounds
     )
 
+
     val koeffX: Float = (rect.width() / (bounds.right - bounds.left)).toFloat()
     val koeffY: Float = (rect.height() / (bounds.top - bounds.bottom)).toFloat()
     val pixelWeight = (bounds.right - bounds.left) / rect.width().toFloat()

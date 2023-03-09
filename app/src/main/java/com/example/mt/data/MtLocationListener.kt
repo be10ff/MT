@@ -1,5 +1,6 @@
 package com.example.mt.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.os.Looper
@@ -21,7 +22,7 @@ class MtLocationListener(context: Context) : LiveData<Location>() {
         }
     }
 
-    //    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission")
     private fun handleGpsInitialization() {
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
@@ -37,4 +38,6 @@ class MtLocationListener(context: Context) : LiveData<Location>() {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
     }
+
+
 }

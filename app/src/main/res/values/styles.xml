@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Text_Normal_Gray" parent="android:Theme">
+        <item name="android:textColor">@color/control_text_disable</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:typeface">serif</item>
+        <item name="android:textSize">@dimen/text_size</item>
+    </style>
+
+
+</resources>

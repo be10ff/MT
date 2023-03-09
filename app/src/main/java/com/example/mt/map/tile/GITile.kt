@@ -2,7 +2,7 @@ package com.example.mt.map.tile
 
 import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.Projection
-import com.example.mt.model.xml.GILayerType
+import com.example.mt.model.xml.SqlProjection
 import kotlin.math.pow
 
 sealed class GITile(
@@ -30,14 +30,21 @@ sealed class GITile(
     companion object {
         const val tilePx = 256
 
-        fun create(z: Int, lon: Double, lat: Double, type: GILayerType): GITile {
+        fun create(z: Int, lon: Double, lat: Double, type: SqlProjection): GITile {
             return when (type) {
-                //osm title
-                GILayerType.SQL_LAYER -> GIOSMTile.from(z, lon, lat)
 
-                GILayerType.SQL_YANDEX_LAYER -> GISQLYandexTile.from(z, lon, lat)
+                SqlProjection.GOOGLE -> GIOSMTile.from(z, lon, lat)
 
-                else -> GIOSMTile.from(z, lon, lat)
+                SqlProjection.YANDEX -> GISQLYandexTile.from(z, lon, lat)
+            }
+        }
+
+        fun create(x: Int, y: Int, z: Int, type: SqlProjection): GITile {
+            return when (type) {
+
+                SqlProjection.GOOGLE -> GIOSMTile(x, y, z)
+
+                SqlProjection.YANDEX -> GISQLYandexTile(x, y, z)
             }
         }
 

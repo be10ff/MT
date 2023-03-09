@@ -1,7 +1,7 @@
 package com.example.mt.model.mapper
 
+import android.graphics.Rect
 import com.example.mt.map.layer.SQLLayer
-import com.example.mt.map.layer.TrafficLayer
 import com.example.mt.map.layer.XMLLayer
 import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.Project
@@ -32,7 +32,6 @@ class ProjectMapper {
                             type = it.type,
                             enabled = it.enabled,
                             source = it.source.name,
-                            sourceLocation = it.source.location,
                             rangeFrom = it.range.from.toIntOrNull(),
                             rangeTo = it.range.to.toIntOrNull(),
                             //todo
@@ -42,31 +41,32 @@ class ProjectMapper {
                             activeEdiable = it.editable?.active
                         )
 
-                        GILayerType.ON_LINE -> TrafficLayer(
-                            name = it.name,
-                            type = it.type,
-                            enabled = it.enabled,
-                            source = it.source.name,
-                            sourceLocation = it.source.location,
-                            rangeFrom = it.range.from.toIntOrNull(),
-                            rangeTo = it.range.to.toIntOrNull(),
-                        )
+//                        GILayerType.ON_LINE -> TrafficLayer(
+//                            name = it.name,
+//                            type = it.type,
+//                            enabled = it.enabled,
+//                            source = it.source.name,
+//                            sourceLocation = it.source.location,
+//                            rangeFrom = it.range.from.toIntOrNull(),
+//                            rangeTo = it.range.to.toIntOrNull(),
+//                        )
 
                         else -> SQLLayer(
                             name = it.name,
                             type = it.type,
                             enabled = it.enabled,
                             source = it.source.name,
-                            sourceLocation = it.source.location,
                             rangeFrom = it.range.from.toIntOrNull(),
                             rangeTo = it.range.to.toIntOrNull(),
-                            sqldb = it.sqlDb!!
+                            sqlProjection = it.sqlProjection ?: SqlProjection.GOOGLE,
+                            sqldb = it.sqlDb ?: GISQLDB()
                         )
                     }
 
                 },
             markerFile = from.markers.file,
-            markerSource = from.markers.file
+            markerSource = from.markers.file,
+            screen = Rect()
         )
     }
 
@@ -86,9 +86,9 @@ class ProjectMapper {
                             type = it.type,
                             source = GISource(
                                 name = it.source,
-                                location = it.sourceLocation
                             ),
                             sqlDb = (it as? SQLLayer)?.sqldb,
+                            sqlProjection = (it as? SQLLayer)?.sqlProjection,
                             //todo
 //                            style = (it as? XMLLayer)?.style,
                             style = null,

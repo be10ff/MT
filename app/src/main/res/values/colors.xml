@@ -11,4 +11,24 @@
     <color name="active_control">#FFFFFFFF</color>
     <color name="control_icon">#FF000000</color>
     <color name="control_icon_disabled">#FF808080</color>
+    <!--//-->
+
+    <color name="light_green">#89AC76</color>
+    <color name="light_gray">#a08D917A</color>
+    <!--<color name="light_gray">#8D917A</color>-->
+    <color name="yellow_green">#425E17</color>
+    <!--<color name="green">#414833</color>-->
+    <!--<color name="olive">#142300</color>-->
+    <color name="green_gray">#4D5645</color>
+    <color name="olive_yellow">#999950</color>
+    <color name="olive_green">#424632</color>
+    <color name="clean_green">#00ff00</color>
+
+
+    <color name="control_dark">@color/olive_green</color>
+    <color name="control_light">@color/olive_yellow</color>
+    <color name="control_off">@color/green_gray</color>
+    <color name="control_text_disable">@color/yellow_green</color>
+    <color name="control_text_button_bg">@color/light_green</color>
+    <color name="control_text_button_disable_bg">@color/light_gray</color>
 </resources>

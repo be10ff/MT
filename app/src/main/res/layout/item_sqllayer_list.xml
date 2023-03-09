@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/block_margin"
+    android:background="@drawable/panel_background"
+    android:orientation="vertical"
+    android:padding="@dimen/block_padding">
+
+    <include layout="@layout/item_layer_header_list" />
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/sTileProjection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textOff="@string/tile_projection_yandex"
+        android:textOn="@string/tile_projection_google"
+        app:showText="true" />
+
+</LinearLayout>

@@ -46,4 +46,12 @@ data class MapUtils(
         val angledeg = Math.toDegrees(anglerad2)
         return angledeg
     }
+
+    companion object {
+        val con = 0.0254 * 0.0066 * 256 / (0.5 * 40000000)
+        fun scale2z(scale: Int): Int = (ln(1 / (scale * con)) / ln(2f)).roundToInt()
+        fun z2scale(z: Int): Int = (1 / (2.0.pow(z) * con)).roundToInt()
+
+    }
+
 }

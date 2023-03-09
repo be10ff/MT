@@ -10,6 +10,7 @@ import com.example.mt.map.tile.GISQLYandexTile
 import com.example.mt.map.tile.GITile
 import com.example.mt.map.tile.GIYandexTrafficTile
 import com.example.mt.model.gi.Bounds
+import com.example.mt.model.xml.SqlProjection
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.ln
@@ -37,13 +38,13 @@ class GIOnlineRenderer : GIRenderer() {
         val z = dz.roundToInt()
         val screen = Screen(rect, bounds)
         val leftTop =
-            GITile.create(z, bounds.left, bounds.top, layer.type)
+            GITile.create(z, bounds.left, bounds.top, SqlProjection.YANDEX)
         val rightBottom =
             GITile.create(
                 z,
                 bounds.right,
                 bounds.bottom,
-                layer.type
+                SqlProjection.YANDEX
             )
 
         for (x in leftTop.x..rightBottom.x) {

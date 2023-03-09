@@ -7,10 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.activityViewModels
+import com.example.mt.ui.main.FragmentViewModel
 
 abstract class AbstractDialog(
     protected val layoutId: Int = 0
 ) : DialogFragment() {
+
+    val fragmentViewModel: FragmentViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
