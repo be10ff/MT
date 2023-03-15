@@ -7,7 +7,7 @@ import android.graphics.Color
 import android.util.AttributeSet
 import android.view.View
 
-class ReMapView(
+class MapView(
     context: Context?,
     attrs: AttributeSet
 ) : View(context, attrs) {

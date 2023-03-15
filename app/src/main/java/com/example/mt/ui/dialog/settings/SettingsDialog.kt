@@ -81,6 +81,15 @@ class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragList
                 fragmentViewModel.submitAction(Action.ProjectAction.TypeChanged(layer, type))
             }
         }
+
+        override fun onProjectName(name: String) =
+            fragmentViewModel.submitAction(Action.ProjectAction.NameChanged(name))
+
+        override fun onProjectPath(path: String) =
+            fragmentViewModel.submitAction(Action.ProjectAction.PathChanged(path))
+
+        override fun onProjectDescription(description: String) =
+            fragmentViewModel.submitAction(Action.ProjectAction.DescriptionChanged(description))
     }
 
     private val adapter = SettingsAdapter(callback = callback, dragListener = this)

@@ -51,7 +51,11 @@ open class GISQLYandexTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
     companion object {
         fun from(z: Int, lon: Double, lat: Double): GISQLYandexTile {
             val point =
-                Projection.reproject(GILonLat(lon, lat), Projection.WGS84, Projection.WorldMercator)
+                Projection.reproject(
+                    GILonLat(lon, lat, Projection.WGS84),
+                    Projection.WGS84,
+                    Projection.WorldMercator
+                )
             val (x, y) = getTile(point, z)
             return GISQLYandexTile(
                 x = x,

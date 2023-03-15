@@ -10,4 +10,5 @@
     <dimen name="text_margin">8dp</dimen>
     <dimen name="block_margin">4dp</dimen>
     <dimen name="block_padding">16dp</dimen>
+    <dimen name="scaleMaxWidth">60dp</dimen>
 </resources>

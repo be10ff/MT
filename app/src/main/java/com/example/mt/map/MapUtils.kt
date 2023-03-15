@@ -20,7 +20,7 @@ data class MapUtils(
     val cl1 = cos(lat1)
     val cl2 = cos(lat2)
     val sl1 = sin(lat1)
-    val sl2 = cos(lat2)
+    val sl2 = sin(lat2)
 
     val delta = lon2 - lon1
     val cdelta = cos(delta)

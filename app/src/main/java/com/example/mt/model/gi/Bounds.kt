@@ -7,11 +7,11 @@ data class Bounds(
     val right: Double,
     val bottom: Double
 ) {
-    val topLeft = GILonLat(left, top)
-    val bottomRight = GILonLat(right, bottom)
+    val topLeft = GILonLat(left, top, projection)
+    val bottomRight = GILonLat(right, bottom, projection)
     val height = top - bottom
     val width = right - left
-    val center = GILonLat((left + right) / 2, (top + bottom) / 2)
+    val center = GILonLat((left + right) / 2, (top + bottom) / 2, projection)
 
 //    fun intesect(bounds: GIBounds): Boolean {
 //        TODO("Not yet implemented")

@@ -6,6 +6,7 @@ import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
+import android.location.Location
 import android.os.Environment
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
@@ -60,11 +61,16 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
 
     val gpsDataLiveData = MtLocationListener(application)
 
-    val bitmapState: MutableSharedFlow<BitmapState> = MutableSharedFlow<BitmapState>(
-        replay = 1,
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
+//    val bitmapState: MutableSharedFlow<BitmapState> = MutableSharedFlow<BitmapState>(
+//        replay = 1,
+//        extraBufferCapacity = 1,
+//        onBufferOverflow = BufferOverflow.DROP_OLDEST
+//    )
+
+    private val _bitmapState: MutableStateFlow<BitmapState> = MutableStateFlow(
+        BitmapState.Unknown
     )
+    val bitmapState: Flow<BitmapState> = _bitmapState
 
     private val _projectState: MutableStateFlow<Project> = MutableStateFlow(Project.InitialState)
     val projectState: StateFlow<Project> = _projectState
@@ -73,15 +79,18 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     var trackLayer: XMLLayer? = null
     var currentTrack: WktGeometry? = null
 
-    private val _commonState = MutableStateFlow<MainState>(
-        MainState.InitialState
-    )
+    private val _commonState = MutableStateFlow<MainState>(MainState.InitialState)
 
-    private val commonState: StateFlow<MainState> = _commonState.asStateFlow()
+    private val commonState: StateFlow<MainState> = _commonState/*.asStateFlow()*/
 
     private val gpsState = commonState.map {
         it.location
     }
+
+    val controlState: SharedFlow<Pair<Location?, Project>> =
+        commonState.combine(projectState) { gps, project ->
+            gps.location to project
+        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), 1)
 
     val buttonState =
         commonState.map {
@@ -97,20 +106,25 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
 
 
     init {
-        submitAction(Action.ProjectAction.Load("storage/emulated/0/YP.pro"))
-
-        trackingState.distinctUntilChanged()
-            .onEach { (location, state) ->
+        viewModelScope.launch {
+            trackingState.collect { (location, state) ->
                 when {
                     (state.writeTrack is TrackState.Started) -> {
                         location?.let {
-                            val point = WktPoint(GILonLat(location.longitude, location.latitude))
-                                .apply {
-                                    this.attributes.put(
-                                        "Date",
-                                        DBaseField("Date", CommonUtils.currentTime())
+                            val point =
+                                WktPoint(
+                                    GILonLat(
+                                        location.longitude,
+                                        location.latitude,
+                                        Projection.WGS84
                                     )
-                                }
+                                )
+                                    .apply {
+                                        this.attributes.put(
+                                            "Date",
+                                            DBaseField("Date", CommonUtils.currentTime())
+                                        )
+                                    }
                             (currentTrack as? WktTrack)?.let { track ->
                                 if (track.points.size == 0 || (track.points.size > 0 && MapUtils(
                                         track.points[track.points.size - 1].point,
@@ -126,9 +140,10 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     state.follow -> {
                         location?.let {
                             projectState.value.let { mapState ->
-                                val newCenter = Screen(mapState.screen, mapState.bounds).toScreen(
-                                    GILonLat(location)
-                                )
+                                val newCenter =
+                                    Screen(mapState.screen, mapState.bounds).toScreen(
+                                        GILonLat(location)
+                                    )
                                 val dX = mapState.screen.exactCenterX() - newCenter.x
                                 val dY = mapState.screen.exactCenterY() - newCenter.y
                                 val distance = hypot(dX, dY)
@@ -139,19 +154,24 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
             }
+        }
 
 
         viewModelScope.launch {
-            projectState.collect { reDraw() }
+            projectState
+                .buffer(1, BufferOverflow.DROP_OLDEST)
+                .collectLatest {
+                    handleReDraw(it.bounds, it.screen)
+                }
         }
 
     }
 
-    fun reDraw() {
-        projectState.value.let {
-            handleReDraw(it.bounds, it.screen)
-        }
-    }
+//    fun reDraw() {
+//        projectState.value.let {
+//            handleReDraw(it.bounds, it.screen)
+//        }
+//    }
 
 
     fun submitAction(action: Action) {
@@ -172,9 +192,6 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 _projectState.updateFlow(viewModelScope) {
                     val correctBounds = it.adjustBoundsRatio(action.rect)
                     it.copy(screen = action.rect, bounds = correctBounds)
-                        .also {
-                            val res = it
-                        }
                 }
             }
 
@@ -230,6 +247,24 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 saveProject(_projectState.value)
             }
 
+            is Action.ProjectAction.NameChanged -> {
+                _projectState.updateFlow(viewModelScope) {
+                    it.copy(name = action.name)
+                }
+            }
+
+            is Action.ProjectAction.PathChanged -> {
+                _projectState.updateFlow(viewModelScope) {
+                    it.copy(saveAs = action.path)
+                }
+            }
+
+            is Action.ProjectAction.DescriptionChanged -> {
+                _projectState.updateFlow(viewModelScope) {
+                    it.copy(description = action.description)
+                }
+            }
+
             is Action.ProjectAction.VisibilityChanged -> _projectState.updateFlow(viewModelScope) {
                 it.copy(layers = it.layers.toMutableList().apply {
                     this[indexOf(action.layer)] = when (action.layer) {
@@ -270,7 +305,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 commonState.value.buttonState.let { state ->
                     when (state.writeTrack) {
                         is TrackState.Stopped -> {
-                            val format = SimpleDateFormat("MMM_dd_mm_ss", Locale.ENGLISH)
+                            val format = SimpleDateFormat("MMM_dd_hh_mm_ss", Locale.ENGLISH)
                             val dateString =
                                 format.format(Date(Calendar.getInstance().timeInMillis))
                             val nameString = "${_projectState.value.name}_${dateString}.track"
@@ -317,45 +352,45 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun handleScale(action: Action.MapAction.ScaleMapBy) {
-        projectState.value.let { mapState ->
+        projectState.value.let { project ->
             val newFocusX =
-                mapState.bounds.left + mapState.pixelWidth * (action.focus.x - mapState.screen.left)
+                project.bounds.left + project.pixelWidth * (action.focus.x - project.screen.left)
             val newFocusY =
-                mapState.bounds.top - mapState.pixelHeight * (action.focus.y - mapState.screen.top)
+                project.bounds.top - project.pixelHeight * (action.focus.y - project.screen.top)
 
             var newLeft =
-                action.focus.x - (action.focus.x - mapState.screen.left).toDouble() / action.factor
+                action.focus.x - (action.focus.x - project.screen.left).toDouble() / action.factor
             var newTop =
-                action.focus.y - (action.focus.y - mapState.screen.top).toDouble() / action.factor
+                action.focus.y - (action.focus.y - project.screen.top).toDouble() / action.factor
             var newRight =
-                action.focus.x - (action.focus.x - mapState.screen.right).toDouble() / action.factor
+                action.focus.x - (action.focus.x - project.screen.right).toDouble() / action.factor
             var newBottom =
-                action.focus.y - (action.focus.y - mapState.screen.bottom).toDouble() / action.factor
+                action.focus.y - (action.focus.y - project.screen.bottom).toDouble() / action.factor
 
             val pixW = newRight - newLeft
             val pixH = newBottom - newTop
 
             when {
-                pixW / pixH > mapState.ratio -> {
+                pixW / pixH > project.ratio -> {
                     val diff =
-                        ((pixW / mapState.screen.width()) * mapState.screen.height() - pixH) / 2
+                        ((pixW / project.screen.width()) * project.screen.height() - pixH) / 2
                     newTop -= diff
                     newBottom += diff
                 }
-                pixW / pixH < mapState.ratio -> {
+                pixW / pixH < project.ratio -> {
                     val diff =
-                        ((pixH / mapState.screen.height()) * mapState.screen.width() - pixW) / 2
+                        ((pixH / project.screen.height()) * project.screen.width() - pixW) / 2
                     newLeft -= diff
                     newRight += diff
                 }
             }
 
             val newBounds = Bounds(
-                mapState.bounds.projection,
-                newFocusX - (action.focus.x - newLeft) * mapState.pixelWidth,
-                newFocusY + (action.focus.y - newTop) * mapState.pixelHeight,
-                newFocusX - (action.focus.x - newRight) * mapState.pixelWidth,
-                newFocusY + (action.focus.y - newBottom) * mapState.pixelHeight
+                project.bounds.projection,
+                newFocusX - (action.focus.x - newLeft) * project.pixelWidth,
+                newFocusY + (action.focus.y - newTop) * project.pixelHeight,
+                newFocusX - (action.focus.x - newRight) * project.pixelWidth,
+                newFocusY + (action.focus.y - newBottom) * project.pixelHeight
             )
             _projectState.updateFlow(viewModelScope) {
                 it.copy(
@@ -363,7 +398,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 )
             }
 
-            handleReDraw(newBounds, mapState.screen)
+//            handleReDraw(newBounds, project.screen)
         }
     }
 
@@ -382,40 +417,59 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     bounds = bounds
                 )
             }
-            handleReDraw(bounds, mapState.screen)
+//            handleReDraw(bounds, mapState.screen)
         }
     }
 
-    private fun handleReDraw(bounds: Bounds, rect: Rect) {
-        viewModelScope.launch {
-            launch(Dispatchers.IO) {
-                if (rect.height() > 0 && rect.width() > 0) {
-                    val screen = Bitmap.createBitmap(
-                        rect.width(),
-                        rect.height(),
-                        Bitmap.Config.ARGB_8888
-                    )
-                    _projectState.value.layers
-                        .filter { it.enabled }
-                        .mapNotNull { layer ->
-                            layer.renderBitmap(
-                                bounds,
-                                Rect(0, 0, rect.width(), rect.height()),
-                                0,
-                                1f
-                            )
-                        }
-                        .fold(screen) { acc, bitmap ->
-                            val canvas = Canvas(acc)
-                            canvas.drawBitmap(bitmap, 0f, 0f, null)
-                            acc
-                        }
-                        ?.let { bitmap ->
-                            bitmapState.emit(BitmapState.Defined(bitmap))
-                        }
-                }
+    private suspend fun handleReDraw(bounds: Bounds, rect: Rect) {
+//        viewModelScope.launch {
+//            launch(Dispatchers.IO) {
+//        when(bitmapState.value){
+//            is BitmapState.Unknown -> Bitmap.createBitmap(
+//                rect.width(),
+//                rect.height(),
+//                Bitmap.Config.ARGB_8888
+//            )
+//
+//            is BitmapState.Defined -> (bitmapState.value as BitmapState.Defined).bitmap
+//        }
+
+        if (rect.height() > 0 && rect.width() > 0) {
+//                    val screen = Bitmap.createBitmap(
+//                        rect.width(),
+//                        rect.height(),
+//                        Bitmap.Config.ARGB_8888
+//                    )
+            val screen = when (_bitmapState.value) {
+                is BitmapState.Unknown -> Bitmap.createBitmap(
+                    rect.width(),
+                    rect.height(),
+                    Bitmap.Config.ARGB_8888
+                )
+
+                is BitmapState.Defined -> (_bitmapState.value as BitmapState.Defined).bitmap
             }
+            val canvas = Canvas(screen)
+            _projectState.value.layers
+                .filter { it.enabled }
+                .mapNotNull { layer ->
+                    layer.renderBitmap(
+                        bounds,
+                        Rect(0, 0, rect.width(), rect.height()),
+                        0,
+                        1f
+                    )
+                }
+                .fold(canvas) { acc, bitmap ->
+                    acc.drawBitmap(bitmap, 0f, 0f, null)
+                    acc
+                }
+//                        ?.let { bitmap ->
+            _bitmapState.emit(BitmapState.Defined(screen))
+//                        }
         }
+//            }
+//        }
     }
 
     private fun handleCreatePoi() {
@@ -434,7 +488,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             poiLayer?.let { layer ->
                 layer.geometries.add(poi)
                 //Todo
-                reDraw()
+//                reDraw()
                 startEditingPoi(layer, poi)
             }
 
@@ -445,6 +499,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
         if (trackLayer == null) {
             trackLayer = handleCreateTrackLayer()
         }
+//        (trackLayer ?: handleCreateTrackLayer())
 
         trackLayer?.let { layer ->
             val format = SimpleDateFormat("MMM_dd_mm_ss", Locale.ENGLISH)
@@ -523,15 +578,18 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             val serializer: Serializer = Persister()
             val mapper = ProjectMapper()
             val input = File(fileName)
-            if (input.exists()) {
+            ///storage/emulated/0/Default.pro
+            (if (input.exists()) {
                 serializer.read(GIPropertiesProject::class.java, input)
                     .let {
                         mapper.mapFrom(it)
                     }
-                    .also {
-                        _projectState.emit(it)
-                    }
-            }
+            } else {
+                Project.InitialState
+            })
+                .also {
+                    _projectState.emit(it)
+                }
         }
     }
 
@@ -540,9 +598,15 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             withContext(Dispatchers.IO) {
                 val serializer: Serializer = Persister()
                 val mapper = ProjectMapper()
-                val output = File("storage/emulated/0/" + project.saveAs)
+//                val defaultPath = "${Environment.getExternalStorageDirectory()}/${project.saveAs}"
+                val output =
+                    File("${Environment.getExternalStorageDirectory().absolutePath}/${project.saveAs}")
+//                val output = File(Environment.getExternalStorageDirectory().absolutePath + project.saveAs)
                 if (!output.exists()) output.createNewFile()
                 projectState.value.also {
+//                    it.layers.filterIsInstance<SQLLayer>().forEach {
+//                        it.db?.close()
+//                    }
                     mapper.mapTo(it)
                         .also {
                             serializer.write(it, output)

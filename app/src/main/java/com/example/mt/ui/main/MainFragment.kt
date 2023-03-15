@@ -1,10 +1,12 @@
 package com.example.mt.ui.main
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.Point
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,21 +16,16 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.mt.MainActivity
 import com.example.mt.R
-import com.example.mt.functional.launchWhenStarted
 import com.example.mt.model.Action
 import com.example.mt.model.BitmapState
 import com.example.mt.model.TrackState
 import com.example.mt.model.xml.GIBounds
 import com.example.mt.ui.dialog.settings.SettingsDialog
 import com.example.mt.ui.view.ControlListener
+import com.example.mt.ui.view.PositionControl
 import kotlinx.android.synthetic.main.main_fragment.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -38,8 +35,8 @@ class MainFragment : Fragment(), ControlListener {
         fun newInstance() = MainFragment()
     }
 
-
     private val fragmentViewModel: FragmentViewModel by activityViewModels()
+    private var positionControl: PositionControl? = null
 
     private val startForResultProject =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -47,8 +44,16 @@ class MainFragment : Fragment(), ControlListener {
                 result.data?.data?.let { uri ->
                     MainActivity.getRealPath(context, uri)
                 }?.let { fileName ->
-                    if (File(fileName).extension == "pro")
+                    if (File(fileName).extension == "pro") {
                         fragmentViewModel.submitAction(Action.ProjectAction.Load(fileName))
+                        activity?.let {
+
+                            it.getPreferences(Context.MODE_PRIVATE).edit().run {
+                                val key = it.resources.getString(R.string.key_last_project)
+                                putString(key, fileName)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -60,27 +65,37 @@ class MainFragment : Fragment(), ControlListener {
         return inflater.inflate(R.layout.main_fragment, container, false)
     }
 
-    override fun onStart() {
-        super.onStart()
-        CoroutineScope(Dispatchers.Main.immediate).launch {
-
-        }
-    }
-
     @InternalCoroutinesApi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupObserve()
         setupGUI()
+        val defaultPath =
+            "${Environment.getExternalStorageDirectory().absolutePath}/DefaultProject.pro"
+        val lastName = activity?.let {
+            val key = it.resources.getString(R.string.key_last_project)
+            it.getPreferences(Context.MODE_PRIVATE)?.getString(key, defaultPath)
+        } ?: defaultPath
+        fragmentViewModel.submitAction(Action.ProjectAction.Load(lastName))
+        positionControl = PositionControl(map, requireContext())
     }
 
 
     @InternalCoroutinesApi
     private fun setupObserve() {
-        fragmentViewModel.bitmapState
-            .filterIsInstance<BitmapState.Defined>()
-            .onEach { map.reDraw(it.bitmap) }
-            .launchWhenStarted(lifecycleScope)
+
+        lifecycleScope.launch {
+            fragmentViewModel.bitmapState
+                .filterIsInstance<BitmapState.Defined>()
+                .collectLatest {
+                    map.reDraw(it.bitmap)
+                }
+        }
+//        fragmentViewModel.bitmapState
+//            .buffer(1, BufferOverflow.DROP_OLDEST)
+//            .filterIsInstance<BitmapState.Defined>()
+//            .onEach { map.reDraw(it.bitmap) }
+//            .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.writeTrack }
@@ -92,6 +107,7 @@ class MainFragment : Fragment(), ControlListener {
                     btnWriteTrack.setImageResource(R.drawable.ic_start_track)
                 }
             }
+            .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.follow }
@@ -101,6 +117,7 @@ class MainFragment : Fragment(), ControlListener {
                     R.drawable.ic_follow
                 )
             }
+            .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.editGeometry }
@@ -110,6 +127,7 @@ class MainFragment : Fragment(), ControlListener {
                     R.drawable.ic_edit
                 )
             }
+            .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.deleteGeometry }
@@ -119,6 +137,8 @@ class MainFragment : Fragment(), ControlListener {
                     R.drawable.ic_delete
                 )
             }
+            .launchIn(lifecycleScope)
+
 
         fragmentViewModel.buttonState
             .onEach { state ->
@@ -147,22 +167,57 @@ class MainFragment : Fragment(), ControlListener {
 //                    R.drawable.ic_delete
 //                )
             }
+
+//        val control = PositionControl(map, requireContext())
+//        CoroutineScope(Dispatchers.Main.immediate).launch {
+//            fragmentViewModel.controlState
+//                .collect  {(location, project) ->
+//                    control.gpsConsumer.invoke(location, project)
+//                    control_scale.gpsConsumer.invoke(location, project)
+//                }
+//        }
+
+        lifecycleScope.launch {
+            fragmentViewModel.controlState
+                .collectLatest { (location, project) ->
+                    positionControl?.gpsConsumer?.invoke(location, project)
+                    control_scale.gpsConsumer.invoke(location, project)
+                }
+        }
+
+
     }
 
     private fun setupGUI() {
         control.listener = this
-        val viewTreeObserver = map.viewTreeObserver
-        if (viewTreeObserver.isAlive) {
-            viewTreeObserver.addOnGlobalLayoutListener {
-                Rect(map.left, map.top, map.right, map.bottom)
-                    .takeIf {
-                        !it.isEmpty
-                    }?.let {
-                        fragmentViewModel.submitAction(Action.MapAction.ViewRectChanged(it))
-                    }
+//        val viewTreeObserver = map.viewTreeObserver
+//        if (viewTreeObserver.isAlive) {
+//            viewTreeObserver.addOnGlobalLayoutListener {
+//                Rect(map.left, map.top, map.right, map.bottom)
+//                    .takeIf {
+//                        !it.isEmpty
+//                    }?.let {
+//                        fragmentViewModel.submitAction(Action.MapAction.ViewRectChanged(it))
+//                    }
+//
+//            }
+//        }
 
-            }
+        map.addOnLayoutChangeListener { v, left, top, right, bottom, _, _, _, _ ->
+            fragmentViewModel.submitAction(
+                Action.MapAction.ViewRectChanged(
+                    Rect(
+                        left,
+                        top,
+                        right,
+                        bottom
+                    )
+                )
+            )
+//            mainViewModel.submitAction(Action.MapAction.InitMapView(map.bitmap))
         }
+
+
         setupButtons()
     }
 

@@ -32,6 +32,9 @@ sealed class Action {
         data class RemoveLayer(val layer: Layer) : Action()
         data class MoveLayer(val from: Layer, val to: Layer) : Action()
         data class TypeChanged(val layer: Layer, val type: SqlProjection) : Action()
+        data class NameChanged(val name: String) : Action()
+        data class PathChanged(val path: String) : Action()
+        data class DescriptionChanged(val description: String) : Action()
     }
 
     sealed class ButtonAction : Action() {

@@ -7,12 +7,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mt.R
+import com.example.mt.ui.dialog.IHolder
 import com.github.guilhe.views.SeekBarRangedView
 import com.github.guilhe.views.SeekBarRangedView.SeekBarRangedChangeCallback
 import kotlin.math.roundToInt
 
 open class LayerHolder(v: View, callback: LayerHolderCallback, dragListener: OnStartDragListener) :
-    RecyclerView.ViewHolder(v) {
+    RecyclerView.ViewHolder(v), IHolder {
     val filePath: TextView
     val exist: ImageView
     val enabled: CheckBox
@@ -59,5 +60,12 @@ open class LayerHolder(v: View, callback: LayerHolderCallback, dragListener: OnS
             if (event.actionMasked == MotionEvent.ACTION_DOWN) dragListener.onStartSwipe(this)
             false
         }
+    }
+
+    override fun unBind() {
+        enabled.setOnClickListener(null)
+        range.actionCallback = null
+        reOrder.setOnTouchListener(null)
+        delete.setOnTouchListener(null)
     }
 }

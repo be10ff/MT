@@ -3,6 +3,7 @@ package com.example.mt.map.layer
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.os.Environment
+import com.example.mt.map.MapUtils
 import com.example.mt.map.renderer.GIRenderer
 import com.example.mt.model.gi.Bounds
 import com.example.mt.model.gi.Projection
@@ -80,8 +81,24 @@ sealed class Layer(
                 rangeTo = null,
                 sqlProjection = SqlProjection.GOOGLE,
                 sqldb = GISQLDB()
+            ).run {
+                proceedSql { db ->
+                    val sqlString = "SELECT min(z), max(z) FROM tiles"
+                    db.rawQuery(sqlString, null)
+                        ?.let { cursor ->
+                            while (cursor.moveToNext()) {
+                                sqldb.maxZ = 17 - cursor.getInt(0)
+                                sqldb.minZ = 17 - cursor.getInt(1)
+                            }
+                            cursor.close()
+                        }
+                }
+                copy(
+                    rangeTo = MapUtils.z2scale(sqldb.minZ),
+                    rangeFrom = MapUtils.z2scale(sqldb.maxZ)
+                )
+            }
 
-            )
         }
 
         fun addXmlLayer(fileName: String): XMLLayer {

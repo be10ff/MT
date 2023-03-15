@@ -9,7 +9,6 @@ import com.example.mt.model.gi.Projection
 import com.example.mt.model.xml.GILayerType
 import com.example.mt.model.xml.GISQLDB
 import com.example.mt.model.xml.SqlProjection
-import java.io.File
 
 data class SQLLayer(
     override val name: String?,
@@ -25,25 +24,72 @@ data class SQLLayer(
     Projection.WGS84, GISQLRenderer()
 ) {
 
-    val db: SQLiteDatabase? =
+//    init {
+//        var _db: SQLiteDatabase? = null
+//        try {
+//
+//            _db =
+//                SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY).also { db ->
+//                    val sqlString = "SELECT min(z), max(z) FROM tiles"
+//                    db.rawQuery(sqlString, null)
+//                        ?.let { cursor ->
+//                            while (cursor.moveToNext()) {
+//                                sqldb.maxZ = 17 - cursor.getInt(0)
+//                                sqldb.minZ = 17 - cursor.getInt(1)
+//                            }
+//                            cursor.close()
+//                        }
+//                }
+//        } finally {
+//            _db?.close()
+//        }
+//    }
+
+    fun proceedSql(job: (SQLiteDatabase) -> Unit) {
+        var _db: SQLiteDatabase? = null
         try {
-            val f = File(source)
-            val res = f.canRead()
-            SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY)
-        } catch (e: Exception) {
-            null
-        }
-            ?.also { db ->
-                val sqlString = "SELECT min(z), max(z) FROM tiles"
-                db.rawQuery(sqlString, null)
-                    ?.let { cursor ->
-                        while (cursor.moveToNext()) {
-                            sqldb.maxZ = 17 - cursor.getInt(0)
-                            sqldb.minZ = 17 - cursor.getInt(1)
-                        }
-                        cursor.close()
+            _db =
+                SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY)
+                    .also { database ->
+                        job(database)
                     }
-            }
+        } finally {
+            _db?.close()
+        }
+    }
+
+//    val db: SQLiteDatabase? =
+//        try {
+//            val f = File(source)
+//            val res = f.canRead()
+//            SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY).also { db ->
+//                val sqlString = "SELECT min(z), max(z) FROM tiles"
+//                db.rawQuery(sqlString, null)
+//                    ?.let { cursor ->
+//                        while (cursor.moveToNext()) {
+//                            sqldb.maxZ = 17 - cursor.getInt(0)
+//                            sqldb.minZ = 17 - cursor.getInt(1)
+//                        }
+//                        cursor.close()
+//                    }
+//            }
+//
+//
+//        } catch (e: Exception) {
+//            null
+//        }
+//            ?.also { db ->
+//                val sqlString = "SELECT min(z), max(z) FROM tiles"
+//                db.rawQuery(sqlString, null)
+//                    ?.let { cursor ->
+//                        while (cursor.moveToNext()) {
+//                            sqldb.maxZ = 17 - cursor.getInt(0)
+//                            sqldb.minZ = 17 - cursor.getInt(1)
+//                        }
+//                        cursor.close()
+//                    }
+//            }
+
 
     override suspend fun renderBitmap(
         area: Bounds,

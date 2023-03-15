@@ -1,6 +1,7 @@
 package com.example.mt.map
 
 import com.example.mt.model.gi.GILonLat
+import com.example.mt.model.gi.Projection
 import kotlin.math.*
 
 class YandexUtils {
@@ -12,6 +13,7 @@ class YandexUtils {
         val latitude_deg = Lg / 180
 
         fun geoToMercator(point: GILonLat): GILonLat {
+            if (point.projection == Projection.WorldMercator) return point
             val d = Math.toRadians(point.lon)
             val m = Math.toRadians(point.lat)
             val k = 0.0818191908426
@@ -20,10 +22,11 @@ class YandexUtils {
             val j = tan(Math.PI / 4 + asin(f) / 2).pow(k)
             val i = h / j
 
-            return GILonLat(R * d, R * ln(i))
+            return GILonLat(R * d, R * ln(i), Projection.WorldMercator)
         }
 
         fun mercatorToGeo(point: GILonLat): GILonLat {
+            if (point.projection == Projection.WGS84) return point
             val n = 0.003356551468879694
             val k = 0.00000657187271079536
             val h = 1.764564338702e-8
@@ -33,7 +36,7 @@ class YandexUtils {
             val l = g + n * sin(2 * g) + k * sin(4 * g) + h * sin(6 * g) + m * sin(8 * g)
             val d = point.lon / R
 
-            return GILonLat(Math.toDegrees(d), Math.toDegrees(l))
+            return GILonLat(Math.toDegrees(d), Math.toDegrees(l), Projection.WGS84)
         }
 //Moved to
 //        fun tile2lon(x: Int, z: Int) = x / 2.0.pow(z) * 360 - 180

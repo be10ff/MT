@@ -14,5 +14,6 @@
     <string name="layer_tile_projection">Tile projection</string>
     <string name="tile_projection_yandex">Yandex</string>
     <string name="tile_projection_google">Google</string>
+    <string name="key_last_project">KEY_LAST_OPENED_PROJECT</string>
 
 </resources>

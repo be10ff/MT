@@ -11,6 +11,10 @@ class GIOSMTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
 //       z = z
 //   )
 
+//    fun tile2lon(x: Int, z: Int): Double {
+//        return x / 2.0.pow(z) * 360 - 180
+//    }
+
     override fun tile2lat(y: Int, z: Int): Double = Math.toDegrees(
         atan(
             sinh(

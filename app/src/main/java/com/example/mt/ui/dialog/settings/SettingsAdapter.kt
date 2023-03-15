@@ -52,7 +52,8 @@ class SettingsAdapter(
             }
         } else {
             with(holder as LayerHolder) {
-                layers[position]?.let { layer ->
+
+            layers[position]?.let { layer ->
                     filePath.text = layer.name
                     enabled.isChecked = layer.enabled
                     exist.setImageResource(if (File(layer.source).exists()) R.drawable.source_exist else R.drawable.no_source)

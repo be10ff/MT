@@ -73,7 +73,7 @@ fun String.pointFromWkt(): WktPoint? =
             it.size == 2
         }
         ?.let {
-            WktPoint(GILonLat(it[0], it[1]))
+            WktPoint(GILonLat(it[0], it[1], Projection.WGS84))
         }
 
 
