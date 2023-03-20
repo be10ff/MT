@@ -90,7 +90,12 @@ class ProjectMapper {
                             sqlDb = (it as? SQLLayer)?.sqldb,
                             sqlProjection = (it as? SQLLayer)?.sqlProjection,
                             //todo
-//                            style = (it as? XMLLayer)?.style,
+//                            style = (it as? XMLLayer)?.style?.run {
+//                                GIStyle(
+//                                  type = "Brush",
+//                                    lineWidth = this.brush.
+//                                )
+//                            },
                             style = null,
                             range = GIRange(
                                 from = it.rangeFrom?.toString() ?: "NAN",

@@ -12,9 +12,9 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mt.CommonUtils
-import com.example.mt.data.FilesPermissionStatusListener
-import com.example.mt.data.MtLocationListener
-import com.example.mt.data.PermissionStatusListener
+import com.example.mt.data.locationListener
+import com.example.mt.data.managePermission
+import com.example.mt.data.permission
 import com.example.mt.functional.AppCoroutineDispatchers
 import com.example.mt.functional.ErrorHandlerManager
 import com.example.mt.functional.updateFlow
@@ -35,7 +35,6 @@ import com.example.mt.model.gi.Projection
 import com.example.mt.model.mapper.ProjectMapper
 import com.example.mt.model.xml.GIPropertiesProject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,38 +49,49 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     val dispatchers = AppCoroutineDispatchers()
     val errorHandlerManager = ErrorHandlerManager()
 
-    val locationPermissionStatusLiveData =
-        PermissionStatusListener(application, Manifest.permission.ACCESS_FINE_LOCATION)
-
-    val readStoragePermissionStatusLiveData =
-        PermissionStatusListener(application, Manifest.permission.READ_EXTERNAL_STORAGE)
-
-    val manageFilesPermissionStatusLiveData =
-        FilesPermissionStatusListener(application)
-
-    val gpsDataLiveData = MtLocationListener(application)
-
-//    val bitmapState: MutableSharedFlow<BitmapState> = MutableSharedFlow<BitmapState>(
-//        replay = 1,
-//        extraBufferCapacity = 1,
-//        onBufferOverflow = BufferOverflow.DROP_OLDEST
-//    )
-
-    private val _bitmapState: MutableStateFlow<BitmapState> = MutableStateFlow(
-        BitmapState.Unknown
+    val locationPermissionStatusFlow = application.permission(
+        Manifest.permission.ACCESS_FINE_LOCATION
     )
-    val bitmapState: Flow<BitmapState> = _bitmapState
+
+    val manageFilesPermissionStatusFlow = application.managePermission()
 
     private val _projectState: MutableStateFlow<Project> = MutableStateFlow(Project.InitialState)
     val projectState: StateFlow<Project> = _projectState
+    val reBitmapState: Flow<BitmapState> =
+        _projectState
+            .filter { !it.screen.isEmpty }
+            .map { project ->
+                val screen = Bitmap.createBitmap(
+                    project.screen.width(),
+                    project.screen.height(),
+                    Bitmap.Config.RGB_565
+                )
+                val canvas = Canvas(screen)
 
+                project.layers
+                    .filter {
+                        it.enabled
+                    }
+                    .map { layer ->
+                        layer.renderBitmap(
+                            canvas,
+                            project.bounds,
+                            Rect(0, 0, project.screen.width(), project.screen.height()),
+                            0,
+                            1f
+                        )
+                    }
+                BitmapState.Defined(screen)
+            }
     var poiLayer: XMLLayer? = null
     var trackLayer: XMLLayer? = null
     var currentTrack: WktGeometry? = null
 
     private val _commonState = MutableStateFlow<MainState>(MainState.InitialState)
 
-    private val commonState: StateFlow<MainState> = _commonState/*.asStateFlow()*/
+    val commonState: StateFlow<MainState> = _commonState
+
+    val permissionState = commonState.map { it.manageGranted }.distinctUntilChanged()
 
     private val gpsState = commonState.map {
         it.location
@@ -106,6 +116,14 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
 
 
     init {
+        _commonState.filter {
+            it.gpsState
+        }.onEach {
+            application.locationListener().collect {
+                submitAction(Action.PermissionAction.LocationUpdated(it))
+            }
+        }.launchIn(viewModelScope)
+
         viewModelScope.launch {
             trackingState.collect { (location, state) ->
                 when {
@@ -149,43 +167,25 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                                 val distance = hypot(dX, dY)
                                 if (distance > 20) moveScreenBy(-dX.toInt(), dY.toInt())
                             }
-
                         }
                     }
                 }
             }
         }
-
-
-        viewModelScope.launch {
-            projectState
-                .buffer(1, BufferOverflow.DROP_OLDEST)
-                .collectLatest {
-                    handleReDraw(it.bounds, it.screen)
-                }
-        }
-
     }
-
-//    fun reDraw() {
-//        projectState.value.let {
-//            handleReDraw(it.bounds, it.screen)
-//        }
-//    }
-
 
     fun submitAction(action: Action) {
         when (action) {
-            is Action.GPSAction.GPSEnabled -> {
+            is Action.PermissionAction.GPSEnabled -> {
                 _commonState.updateFlow(viewModelScope) { it.copy(gpsState = true) }
             }
 
-            is Action.GPSAction.LocationUpdated -> {
+            is Action.PermissionAction.LocationUpdated -> {
                 _commonState.updateFlow(viewModelScope) { it.copy(location = action.location) }
             }
 
-            is Action.GPSAction.StorageGranted -> {
-                _commonState.updateFlow(viewModelScope) { it.copy(storageGranted = action.granted) }
+            is Action.PermissionAction.ManageFileGranted -> {
+                _commonState.updateFlow(viewModelScope) { it.copy(manageGranted = action.granted) }
             }
 
             is Action.MapAction.ViewRectChanged -> {
@@ -212,8 +212,9 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
 
             is Action.MapAction.Update -> {}/*updateFlow { it.copy(mapState = it.mapState.copy(update = true))}*/
 
-            is Action.ProjectAction.Load -> loadProject(action.source)
-
+            is Action.ProjectAction.Load -> {
+                if (_commonState.value.manageGranted) loadProject(action.source)
+            }
             is Action.ProjectAction.AddLayer -> {
                 Layer.addLayer(action.source)
                     ?.let { layer ->
@@ -244,7 +245,12 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             }
 
             is Action.ProjectAction.Save -> {
-                saveProject(_projectState.value)
+                _commonState.filter {
+                    it.manageGranted
+                }.onEach {
+                    saveProject(_projectState.value)
+                }.launchIn(viewModelScope)
+
             }
 
             is Action.ProjectAction.NameChanged -> {
@@ -347,6 +353,11 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
 
             is Action.ButtonAction.AddPosition -> {
                 handleCreatePoi()
+//                        _projectState.updateFlow(viewModelScope) {
+//                            it.copy(layers = it.layers.toMutableList().apply {
+//                                add(TupleLayer)
+//                            })
+//                        }
             }
         }
     }
@@ -397,8 +408,6 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     bounds = newBounds
                 )
             }
-
-//            handleReDraw(newBounds, project.screen)
         }
     }
 
@@ -417,59 +426,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     bounds = bounds
                 )
             }
-//            handleReDraw(bounds, mapState.screen)
         }
-    }
-
-    private suspend fun handleReDraw(bounds: Bounds, rect: Rect) {
-//        viewModelScope.launch {
-//            launch(Dispatchers.IO) {
-//        when(bitmapState.value){
-//            is BitmapState.Unknown -> Bitmap.createBitmap(
-//                rect.width(),
-//                rect.height(),
-//                Bitmap.Config.ARGB_8888
-//            )
-//
-//            is BitmapState.Defined -> (bitmapState.value as BitmapState.Defined).bitmap
-//        }
-
-        if (rect.height() > 0 && rect.width() > 0) {
-//                    val screen = Bitmap.createBitmap(
-//                        rect.width(),
-//                        rect.height(),
-//                        Bitmap.Config.ARGB_8888
-//                    )
-            val screen = when (_bitmapState.value) {
-                is BitmapState.Unknown -> Bitmap.createBitmap(
-                    rect.width(),
-                    rect.height(),
-                    Bitmap.Config.ARGB_8888
-                )
-
-                is BitmapState.Defined -> (_bitmapState.value as BitmapState.Defined).bitmap
-            }
-            val canvas = Canvas(screen)
-            _projectState.value.layers
-                .filter { it.enabled }
-                .mapNotNull { layer ->
-                    layer.renderBitmap(
-                        bounds,
-                        Rect(0, 0, rect.width(), rect.height()),
-                        0,
-                        1f
-                    )
-                }
-                .fold(canvas) { acc, bitmap ->
-                    acc.drawBitmap(bitmap, 0f, 0f, null)
-                    acc
-                }
-//                        ?.let { bitmap ->
-            _bitmapState.emit(BitmapState.Defined(screen))
-//                        }
-        }
-//            }
-//        }
     }
 
     private fun handleCreatePoi() {
@@ -477,7 +434,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             poiLayer = handleCreatePoiLayer()
         }
         projectState.value.bounds.let {
-            val poi = WktPoint(Projection.reproject(it.center, it.projection, Projection.WGS84))
+            val poi = WktPoint(Projection.reproject(it.center, Projection.WGS84))
                 .apply {
                     this.attributes.put("Date", DBaseField("Date", CommonUtils.currentTime()))
                     this.attributes.put(
@@ -578,12 +535,16 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             val serializer: Serializer = Persister()
             val mapper = ProjectMapper()
             val input = File(fileName)
-            ///storage/emulated/0/Default.pro
             (if (input.exists()) {
-                serializer.read(GIPropertiesProject::class.java, input)
-                    .let {
-                        mapper.mapFrom(it)
-                    }
+                try {
+                    serializer.read(GIPropertiesProject::class.java, input)
+                        .let {
+                            mapper.mapFrom(it)
+                        }
+                } catch (e: Exception) {
+                    Project.InitialState
+                }
+
             } else {
                 Project.InitialState
             })
@@ -598,22 +559,16 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             withContext(Dispatchers.IO) {
                 val serializer: Serializer = Persister()
                 val mapper = ProjectMapper()
-//                val defaultPath = "${Environment.getExternalStorageDirectory()}/${project.saveAs}"
                 val output =
                     File("${Environment.getExternalStorageDirectory().absolutePath}/${project.saveAs}")
-//                val output = File(Environment.getExternalStorageDirectory().absolutePath + project.saveAs)
                 if (!output.exists()) output.createNewFile()
                 projectState.value.also {
-//                    it.layers.filterIsInstance<SQLLayer>().forEach {
-//                        it.db?.close()
-//                    }
                     mapper.mapTo(it)
                         .also {
                             serializer.write(it, output)
                         }
                 }
             }
-
         }
     }
 }

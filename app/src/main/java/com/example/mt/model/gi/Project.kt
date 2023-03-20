@@ -1,11 +1,11 @@
 package com.example.mt.model.gi
 
-import android.graphics.Point
+import android.graphics.PointF
 import android.graphics.Rect
 import com.example.mt.map.MapUtils
+import com.example.mt.map.Screen
 import com.example.mt.map.layer.Layer
 import kotlin.math.hypot
-import kotlin.math.roundToInt
 
 data class Project(
     val name: String?,
@@ -96,22 +96,20 @@ data class Project(
         }
     }
 
-    fun mapToScreen(lonlat: GILonLat): Point {
-//        val position = Projection.reproject(lonlat, Projection.WGS84, bounds.projection)
-//        return Point(
-//            ((position.lon - bounds.left)/pixelWidth).roundToInt(),
-//            ((bounds.top - position.lat)/pixelHeight).roundToInt()
-//        ).let{
-
-        val wgsBounds = bounds.reproject(Projection.WGS84)
-        val _pixelWidth = wgsBounds.width / screen.width()
-        val _pixelHeight = wgsBounds.height / screen.height()
-        val res = Point(
-            ((lonlat.lon - wgsBounds.left) / _pixelWidth).roundToInt(),
-            ((wgsBounds.top - lonlat.lat) / _pixelHeight).roundToInt()
-        )
-        return res
+    fun mapToScreen(lonlat: GILonLat): PointF {
+//        val wgsBounds = bounds.reproject(Projection.WGS84)
+//        val _pixelWidth = wgsBounds.width / screen.width()
+//        val _pixelHeight = wgsBounds.height / screen.height()
+//        val res = try {
+//            /*val res =*/ Point(
+//                ((lonlat.lon - wgsBounds.left) / _pixelWidth).roundToInt(),
+//                ((wgsBounds.top - lonlat.lat) / _pixelHeight).roundToInt()
+//            )
+//        } catch (e: Exception) {
+//            Point(0, 0)
 //        }
+        return Screen(screen, bounds).toScreen(lonlat)
+//        return res
     }
 
     val metersInPixel: Double

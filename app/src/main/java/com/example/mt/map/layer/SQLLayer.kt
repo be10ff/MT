@@ -1,7 +1,7 @@
 package com.example.mt.map.layer
 
 import android.database.sqlite.SQLiteDatabase
-import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Rect
 import com.example.mt.map.renderer.GISQLRenderer
 import com.example.mt.model.gi.Bounds
@@ -21,82 +21,20 @@ data class SQLLayer(
     val sqldb: GISQLDB
 ) : Layer(
     name, type, enabled, source, rangeFrom, rangeTo,
-    Projection.WGS84, GISQLRenderer()
+    Projection.WGS84, GISQLRenderer
 ) {
 
-//    init {
-//        var _db: SQLiteDatabase? = null
-//        try {
-//
-//            _db =
-//                SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY).also { db ->
-//                    val sqlString = "SELECT min(z), max(z) FROM tiles"
-//                    db.rawQuery(sqlString, null)
-//                        ?.let { cursor ->
-//                            while (cursor.moveToNext()) {
-//                                sqldb.maxZ = 17 - cursor.getInt(0)
-//                                sqldb.minZ = 17 - cursor.getInt(1)
-//                            }
-//                            cursor.close()
-//                        }
-//                }
-//        } finally {
-//            _db?.close()
-//        }
-//    }
-
     fun proceedSql(job: (SQLiteDatabase) -> Unit) {
-        var _db: SQLiteDatabase? = null
-        try {
-            _db =
-                SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY)
-                    .also { database ->
-                        job(database)
-                    }
-        } finally {
-            _db?.close()
-        }
+        SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY).use(job)
     }
 
-//    val db: SQLiteDatabase? =
-//        try {
-//            val f = File(source)
-//            val res = f.canRead()
-//            SQLiteDatabase.openDatabase(source, null, SQLiteDatabase.OPEN_READONLY).also { db ->
-//                val sqlString = "SELECT min(z), max(z) FROM tiles"
-//                db.rawQuery(sqlString, null)
-//                    ?.let { cursor ->
-//                        while (cursor.moveToNext()) {
-//                            sqldb.maxZ = 17 - cursor.getInt(0)
-//                            sqldb.minZ = 17 - cursor.getInt(1)
-//                        }
-//                        cursor.close()
-//                    }
-//            }
-//
-//
-//        } catch (e: Exception) {
-//            null
-//        }
-//            ?.also { db ->
-//                val sqlString = "SELECT min(z), max(z) FROM tiles"
-//                db.rawQuery(sqlString, null)
-//                    ?.let { cursor ->
-//                        while (cursor.moveToNext()) {
-//                            sqldb.maxZ = 17 - cursor.getInt(0)
-//                            sqldb.minZ = 17 - cursor.getInt(1)
-//                        }
-//                        cursor.close()
-//                    }
-//            }
-
-
     override suspend fun renderBitmap(
+        canvas: Canvas,
         area: Bounds,
         rect: Rect,
         opacity: Int,
         scale: Float
-    ): Bitmap? {
-        return renderer.renderBitmap(this, area, opacity, rect, scale)
+    ) {
+        renderer.renderBitmap(canvas, this, area, opacity, rect, scale)
     }
 }

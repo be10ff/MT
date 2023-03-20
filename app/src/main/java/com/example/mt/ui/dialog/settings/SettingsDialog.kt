@@ -16,7 +16,6 @@ import com.example.mt.model.xml.SqlProjection
 import com.example.mt.ui.dialog.AbstractDialog
 import kotlinx.android.synthetic.main.dialog_settings.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -99,14 +98,12 @@ class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragList
     override fun setupObserve() {
         lifecycleScope.launch {
             fragmentViewModel.projectState
-                .filterNotNull()
                 .collect { project ->
                     (rvLayers.adapter as? SettingsAdapter)?.let {
                         it.setData(project)
                         rvLayers.post {
                             it.notifyDataSetChanged()
                         }
-
                     }
                 }
         }

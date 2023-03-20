@@ -1,6 +1,5 @@
 package com.example.mt.map.renderer
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Rect
@@ -16,21 +15,17 @@ import java.net.URL
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
-class GIOnlineRenderer : GIRenderer() {
+object GIOnlineRenderer : GIRenderer() {
     private val cache = emptyList<GIYandexTrafficTile>()
     override suspend fun renderBitmap(
+        canvas: Canvas,
         layer: Layer,
         area: Bounds,
         opacity: Int,
         rect: Rect,
         scale: Float
-    ): Bitmap? {
-        val bitmap = Bitmap.createBitmap(
-            rect.width(),
-            rect.height(),
-            Bitmap.Config.ARGB_8888
-        )
-        val canvas = Canvas(bitmap)
+    ) {
+
         val bounds = area.reproject(layer.projection)
         val widthPx = rect.width()
         val kf: Double = 360.0 / (GITile.tilePx)
@@ -68,6 +63,5 @@ class GIOnlineRenderer : GIRenderer() {
 
             }
         }
-        return bitmap
     }
 }

@@ -1,6 +1,5 @@
 package com.example.mt.map.renderer
 
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
 import com.example.mt.map.layer.Layer
@@ -8,29 +7,21 @@ import com.example.mt.map.layer.XMLLayer
 import com.example.mt.map.wkt.WktGeometry
 import com.example.mt.model.gi.Bounds
 
-class GIXMLRenderer : GIRenderer() {
+object GIXMLRenderer : GIRenderer() {
     override suspend fun renderBitmap(
+        canvas: Canvas,
         layer: Layer,
         area: Bounds,
         opacity: Int,
         rect: Rect,
         scale: Float
-    ): Bitmap? {
-        val bitmap = Bitmap.createBitmap(
-            rect.width(),
-            rect.height(),
-            Bitmap.Config.ARGB_8888
-        )
-        val canvas = Canvas(bitmap)
+    ) {
         (layer as? XMLLayer)
             ?.let { xmlLayer ->
                 xmlLayer.geometries
                     .map { geometry: WktGeometry ->
-                        //todo
                         geometry.draw(canvas, area, scale, xmlLayer.style)
                     }
             }
-
-        return bitmap
     }
 }

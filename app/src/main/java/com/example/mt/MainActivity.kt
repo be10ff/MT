@@ -5,7 +5,6 @@ import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -17,20 +16,21 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.mt.model.Action
 import com.example.mt.model.PermissionStatus
 import com.example.mt.ui.main.FragmentViewModel
 import com.example.mt.ui.main.MainFragment
 import com.nabinbhandari.android.permissions.PermissionHandler
 import com.nabinbhandari.android.permissions.Permissions
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 
 class MainActivity : AppCompatActivity() {
     lateinit var fragmentViewModel: FragmentViewModel
     private var locationAlertDialog: AlertDialog? = null
-    private var storageAlertDialog: AlertDialog? = null
     private var manageFilesAlertDialog: AlertDialog? = null
 
 //    private val activityViewModel: FragmentViewModel by viewModels()
@@ -47,10 +47,7 @@ class MainActivity : AppCompatActivity() {
         fragmentViewModel = ViewModelProvider(this).get(FragmentViewModel::class.java)
 
         subscribeToLocationPermissionListener()
-        subscribeToReadStoragePermissionListener()
         subscribeToManageFilesPermissionListener()
-        //Move
-        fragmentViewModel.gpsDataLiveData.observe(this, gpsObserver)
     }
 
     override fun onStop() {
@@ -59,85 +56,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun subscribeToLocationPermissionListener() {
-        fragmentViewModel.locationPermissionStatusLiveData.observe(
-            this,
-            locationPermissionObserver
-        )
-    }
-
-    private fun subscribeToReadStoragePermissionListener() {
-        fragmentViewModel.readStoragePermissionStatusLiveData.observe(
-            this,
-            readStoragePermissionObserver
-        )
-    }
-
-    private fun subscribeToManageFilesPermissionListener() {
-        fragmentViewModel.manageFilesPermissionStatusLiveData.observe(
-            this,
-            manageFilesPermissionObserver
-        )
-    }
-
-    private val locationPermissionObserver = Observer<PermissionStatus> { status ->
-        status?.let {
+        fragmentViewModel.locationPermissionStatusFlow.onEach { status ->
             when (status) {
                 is PermissionStatus.Granted -> hangdleGpsDialog()
                 is PermissionStatus.Denied -> showLocationPermissionNeededDialog()
                 else -> {}
             }
-        }
+        }.launchIn(lifecycleScope)
     }
 
-    private val readStoragePermissionObserver = Observer<PermissionStatus> { status ->
-        status?.let {
-            when (status) {
-                is PermissionStatus.Denied -> showReadStoragePermissionNeededDialog()
-                else -> {}
-            }
-        }
-    }
-
-    private val manageFilesPermissionObserver = Observer<PermissionStatus> { status ->
-        status?.let {
+    private fun subscribeToManageFilesPermissionListener() {
+        fragmentViewModel.manageFilesPermissionStatusFlow.onEach { status ->
             when (status) {
                 is PermissionStatus.Denied -> showManageFilesPermissionNeededDialog()
                 else -> {
-                    //todo
-                    fragmentViewModel.submitAction(Action.GPSAction.StorageGranted(true))
+                    fragmentViewModel.submitAction(Action.PermissionAction.ManageFileGranted(true))
                 }
             }
-        }
-    }
+        }.launchIn(lifecycleScope)
 
-    private val gpsObserver = Observer<Location> { location ->
-        fragmentViewModel.submitAction(Action.GPSAction.LocationUpdated(location))
     }
 
     private val locationPermissionHandler = object : PermissionHandler() {
         override fun onGranted() {
-            fragmentViewModel.submitAction(Action.GPSAction.GPSEnabled(true))
+            fragmentViewModel.submitAction(Action.PermissionAction.GPSEnabled(true))
         }
 
         override fun onDenied(context: Context?, deniedPermissions: ArrayList<String>?) {
             super.onDenied(context, deniedPermissions)
-            fragmentViewModel.submitAction(Action.GPSAction.GPSEnabled(false))
-        }
-    }
-
-    private val storagePermissionHandler = object : PermissionHandler() {
-        override fun onGranted() {
-            //LoadProj
-        }
-
-        override fun onDenied(context: Context?, deniedPermissions: ArrayList<String>?) {
-            super.onDenied(context, deniedPermissions)
-            finish()
+            fragmentViewModel.submitAction(Action.PermissionAction.GPSEnabled(false))
         }
     }
 
     private fun hangdleGpsDialog() {
-        fragmentViewModel.submitAction(Action.GPSAction.GPSEnabled(true))
+        fragmentViewModel.submitAction(Action.PermissionAction.GPSEnabled(true))
     }
 
     private fun showLocationPermissionNeededDialog() {
@@ -145,7 +97,7 @@ class MainActivity : AppCompatActivity() {
 
         locationAlertDialog = AlertDialog.Builder(this)
             .setTitle(R.string.permission_required_title)
-            .setMessage(R.string.permission_required_message)
+            .setMessage(R.string.location_permission_required_message)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 Permissions.check(
                     this,
@@ -159,37 +111,17 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun showReadStoragePermissionNeededDialog() {
-        if (storageAlertDialog?.isShowing == true) return
-
-        storageAlertDialog = AlertDialog.Builder(this)
-            .setTitle(R.string.permission_required_title)
-            .setMessage(R.string.permission_required_message)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                Permissions.check(
-                    this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    null,
-                    storagePermissionHandler
-                )
-            }
-            .create()
-        storageAlertDialog?.apply { show() }
-
-    }
-
     private fun showManageFilesPermissionNeededDialog() {
         if (manageFilesAlertDialog?.isShowing == true) return
 
         manageFilesAlertDialog = AlertDialog.Builder(this)
             .setTitle(R.string.permission_required_title)
-            .setMessage(R.string.permission_required_message)
+            .setMessage(R.string.manage_files_permission_required_message)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 requestPermission()
             }
             .create()
         manageFilesAlertDialog?.apply { show() }
-
     }
 
     private fun requestPermission() {
@@ -228,7 +160,7 @@ class MainActivity : AppCompatActivity() {
                         .show()
                 }
                 fragmentViewModel.submitAction(
-                    Action.GPSAction.StorageGranted(
+                    Action.PermissionAction.ManageFileGranted(
                         WRITE_EXTERNAL_STORAGE
                     )
                 )
@@ -242,7 +174,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 2296) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 if (Environment.isExternalStorageManager()) {
-                    fragmentViewModel.submitAction(Action.GPSAction.StorageGranted(true))
+                    fragmentViewModel.submitAction(Action.PermissionAction.ManageFileGranted(true))
                 }
             }
         }

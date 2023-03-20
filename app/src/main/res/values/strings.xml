@@ -7,7 +7,9 @@
     <string name="permission_status_denied">Denied</string>
     <string name="permission_status_bloked">Blocked</string>
     <string name="permission_required_title">Required</string>
-    <string name="permission_required_message">permission required</string>
+    <string name="location_permission_required_message">Location permission required</string>
+    <string name="read_storage_permission_required_message">Read storage permission required</string>
+    <string name="manage_files_permission_required_message">Write and Manage files permission required</string>
     <string name="project_name">Name</string>
     <string name="project_path">Path</string>
     <string name="project_description">Description</string>

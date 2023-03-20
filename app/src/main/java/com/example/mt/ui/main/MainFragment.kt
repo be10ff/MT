@@ -19,7 +19,6 @@ import com.example.mt.R
 import com.example.mt.model.Action
 import com.example.mt.model.BitmapState
 import com.example.mt.model.TrackState
-import com.example.mt.model.xml.GIBounds
 import com.example.mt.ui.dialog.settings.SettingsDialog
 import com.example.mt.ui.view.ControlListener
 import com.example.mt.ui.view.PositionControl
@@ -47,7 +46,6 @@ class MainFragment : Fragment(), ControlListener {
                     if (File(fileName).extension == "pro") {
                         fragmentViewModel.submitAction(Action.ProjectAction.Load(fileName))
                         activity?.let {
-
                             it.getPreferences(Context.MODE_PRIVATE).edit().run {
                                 val key = it.resources.getString(R.string.key_last_project)
                                 putString(key, fileName)
@@ -70,13 +68,13 @@ class MainFragment : Fragment(), ControlListener {
         super.onViewCreated(view, savedInstanceState)
         setupObserve()
         setupGUI()
-        val defaultPath =
-            "${Environment.getExternalStorageDirectory().absolutePath}/DefaultProject.pro"
-        val lastName = activity?.let {
-            val key = it.resources.getString(R.string.key_last_project)
-            it.getPreferences(Context.MODE_PRIVATE)?.getString(key, defaultPath)
-        } ?: defaultPath
-        fragmentViewModel.submitAction(Action.ProjectAction.Load(lastName))
+//        val defaultPath =
+//            "${Environment.getExternalStorageDirectory().absolutePath}/DefaultProject.pro"
+//        val lastName = activity?.let {
+//            val key = it.resources.getString(R.string.key_last_project)
+//            it.getPreferences(Context.MODE_PRIVATE)?.getString(key, defaultPath)
+//        } ?: defaultPath
+//        fragmentViewModel.submitAction(Action.ProjectAction.Load(lastName))
         positionControl = PositionControl(map, requireContext())
     }
 
@@ -85,97 +83,54 @@ class MainFragment : Fragment(), ControlListener {
     private fun setupObserve() {
 
         lifecycleScope.launch {
-            fragmentViewModel.bitmapState
+            fragmentViewModel.permissionState
+                .filter { it }
+                .collectLatest {
+                    val defaultPath =
+                        "${Environment.getExternalStorageDirectory().absolutePath}/DefaultProject.pro"
+                    val lastName = activity?.let {
+                        val key = it.resources.getString(R.string.key_last_project)
+                        it.getPreferences(Context.MODE_PRIVATE)?.getString(key, defaultPath)
+                    } ?: defaultPath
+                    fragmentViewModel.submitAction(Action.ProjectAction.Load(lastName))
+                }
+        }
+
+        lifecycleScope.launch {
+            fragmentViewModel.reBitmapState
                 .filterIsInstance<BitmapState.Defined>()
                 .collectLatest {
                     map.reDraw(it.bitmap)
                 }
         }
-//        fragmentViewModel.bitmapState
-//            .buffer(1, BufferOverflow.DROP_OLDEST)
-//            .filterIsInstance<BitmapState.Defined>()
-//            .onEach { map.reDraw(it.bitmap) }
-//            .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.writeTrack }
-            .distinctUntilChanged()
             .onEach { state ->
-                if (state is TrackState.Started) {
-                    btnWriteTrack.setImageResource(R.drawable.ic_stop_track)
-                } else {
-                    btnWriteTrack.setImageResource(R.drawable.ic_start_track)
-                }
+                btnWriteTrack.setImageResource(if (state is TrackState.Started) R.drawable.ic_stop_track else R.drawable.ic_start_track)
             }
             .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.follow }
-            .distinctUntilChanged()
             .onEach { state ->
-                if (state) btnFollow.setImageResource(R.drawable.ic_follow_diableled) else btnFollow.setImageResource(
-                    R.drawable.ic_follow
-                )
+                btnFollow.setImageResource(if (state) R.drawable.ic_follow_diableled else R.drawable.ic_follow)
             }
             .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.editGeometry }
-            .distinctUntilChanged()
             .onEach { state ->
-                if (state) btnEdit.setImageResource(R.drawable.ic_close) else btnEdit.setImageResource(
-                    R.drawable.ic_edit
-                )
+                btnEdit.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_edit)
             }
             .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.deleteGeometry }
-            .distinctUntilChanged()
             .onEach { state ->
-                if (state) btnDelete.setImageResource(R.drawable.ic_close) else btnDelete.setImageResource(
-                    R.drawable.ic_delete
-                )
+                btnDelete.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_delete)
             }
             .launchIn(lifecycleScope)
-
-
-        fragmentViewModel.buttonState
-            .onEach { state ->
-//                if (state.writeTrack is TrackState.Started)  {
-//                    btnWriteTrack.setImageResource(R.drawable.ic_stop_track)
-//                    requireActivity().let{
-//                        val intent = Intent(it, TrackService::class.java)
-//                        intent.putExtra(TrackService.FILENAME, state.writeTrack.fileName)
-//                        startForegroundService(it, intent)
-//                    }
-//                } else {
-//                    btnWriteTrack.setImageResource(R.drawable.ic_start_track)
-//                    requireContext().let {
-//                        val intent = Intent(it, TrackService::class.java)
-//                        activity?.stopService(intent)
-//                    }
-//
-//                }
-//                if (state.follow) btnFollow.setImageResource(R.drawable.ic_follow_diableled) else btnFollow.setImageResource(
-//                    R.drawable.ic_follow
-//                )
-//                if (state.editGeometry) btnEdit.setImageResource(R.drawable.ic_close) else btnEdit.setImageResource(
-//                    R.drawable.ic_edit
-//                )
-//                if (state.deleteGeometry) btnDelete.setImageResource(R.drawable.ic_close) else btnDelete.setImageResource(
-//                    R.drawable.ic_delete
-//                )
-            }
-
-//        val control = PositionControl(map, requireContext())
-//        CoroutineScope(Dispatchers.Main.immediate).launch {
-//            fragmentViewModel.controlState
-//                .collect  {(location, project) ->
-//                    control.gpsConsumer.invoke(location, project)
-//                    control_scale.gpsConsumer.invoke(location, project)
-//                }
-//        }
 
         lifecycleScope.launch {
             fragmentViewModel.controlState
@@ -184,25 +139,10 @@ class MainFragment : Fragment(), ControlListener {
                     control_scale.gpsConsumer.invoke(location, project)
                 }
         }
-
-
     }
 
     private fun setupGUI() {
         control.listener = this
-//        val viewTreeObserver = map.viewTreeObserver
-//        if (viewTreeObserver.isAlive) {
-//            viewTreeObserver.addOnGlobalLayoutListener {
-//                Rect(map.left, map.top, map.right, map.bottom)
-//                    .takeIf {
-//                        !it.isEmpty
-//                    }?.let {
-//                        fragmentViewModel.submitAction(Action.MapAction.ViewRectChanged(it))
-//                    }
-//
-//            }
-//        }
-
         map.addOnLayoutChangeListener { v, left, top, right, bottom, _, _, _, _ ->
             fragmentViewModel.submitAction(
                 Action.MapAction.ViewRectChanged(
@@ -214,10 +154,7 @@ class MainFragment : Fragment(), ControlListener {
                     )
                 )
             )
-//            mainViewModel.submitAction(Action.MapAction.InitMapView(map.bitmap))
         }
-
-
         setupButtons()
     }
 
@@ -235,10 +172,6 @@ class MainFragment : Fragment(), ControlListener {
 
     override fun updateMap() {
         fragmentViewModel.submitAction(Action.MapAction.Update)
-    }
-
-    override fun boundsChanged(bounds: GIBounds) {
-
     }
 
     private fun setupButtons() {

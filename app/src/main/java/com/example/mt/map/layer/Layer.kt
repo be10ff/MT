@@ -1,6 +1,6 @@
 package com.example.mt.map.layer
 
-import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Rect
 import android.os.Environment
 import com.example.mt.map.MapUtils
@@ -26,11 +26,12 @@ sealed class Layer(
 ) {
 
     abstract suspend fun renderBitmap(
+        canvas: Canvas,
         area: Bounds,
         rect: Rect,
         opacity: Int,
         scale: Float
-    ): Bitmap?
+    )
 
 //    abstract fun copy_deep (update: (Layer) -> Layer ) : Lay
 

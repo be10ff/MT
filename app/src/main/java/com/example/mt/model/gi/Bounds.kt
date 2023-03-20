@@ -26,13 +26,15 @@ data class Bounds(
 //    fun rightBottom() = GILonLat(right, bottom)
 
     fun reproject(projection: Projection): Bounds {
-        val topLeft = Projection.reproject(this.topLeft, this.projection, projection)
-        val bottomRight = Projection.reproject(bottomRight, this.projection, projection)
-        return Bounds(projection, topLeft.lon, topLeft.lat, bottomRight.lon, bottomRight.lat)
+        return if (this.projection != projection) {
+            val topLeft = Projection.reproject(topLeft, projection)
+            val bottomRight = Projection.reproject(bottomRight, projection)
+            Bounds(projection, topLeft.lon, topLeft.lat, bottomRight.lon, bottomRight.lat)
+        } else this
     }
 
     fun contains(point: GILonLat): Boolean {
-        return Projection.reproject(point, Projection.WGS84, projection)
+        return Projection.reproject(point, projection)
             .let {
                 it.lon in left..right && it.lat in bottom..top
             }

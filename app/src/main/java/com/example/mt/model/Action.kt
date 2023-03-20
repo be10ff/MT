@@ -7,12 +7,10 @@ import com.example.mt.map.layer.Layer
 import com.example.mt.model.xml.SqlProjection
 
 sealed class Action {
-    sealed class GPSAction : Action() {
-        data class GPSEnabled(val enabled: Boolean) : GPSAction()
-        data class LocationUpdated(val location: Location) : GPSAction()
-
-        //        data class LonLatUpdated(val lonLat: GILonLat) : GPSAction()
-        data class StorageGranted(val granted: Boolean) : GPSAction()
+    sealed class PermissionAction : Action() {
+        data class GPSEnabled(val enabled: Boolean) : PermissionAction()
+        data class LocationUpdated(val location: Location) : PermissionAction()
+        data class ManageFileGranted(val granted: Boolean) : PermissionAction()
     }
 
     sealed class MapAction : Action() {

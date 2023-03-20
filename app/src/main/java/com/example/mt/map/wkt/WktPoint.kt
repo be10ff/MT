@@ -18,7 +18,7 @@ data class WktPoint(
     override val attributes: MutableMap<String, DBaseField> = mutableMapOf()
     val lon = point.lon
     val lat = point.lat
-    val inMap = Projection.reproject(point, Projection.WGS84, Projection.WorldMercator)
+    val inMap = Projection.reproject(point, Projection.WorldMercator)
     var trackId = -1
 
     override fun toWKT(): String = "POINT($lon $lat)"

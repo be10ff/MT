@@ -22,12 +22,11 @@ data class VectorStyle(
             style = Paint.Style.STROKE
             strokeWidth = 3f
         }
-
         //        val point = BitmapFactory.decodeResource(Resources.getSystem(), R.drawable.measure_point)
         val bitmap = Bitmap.createBitmap(
             48,
             48,
-            Bitmap.Config.ARGB_8888
+            Bitmap.Config.RGB_565
         ).apply {
             Canvas(this).drawCircle(24f, 24f, 24f, fill)
         }

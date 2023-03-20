@@ -18,28 +18,37 @@ open class GISQLYandexTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
         var zu = result02 / (180 / Math.PI)
         val yy = y - tilesAtZoom / 2
         var zum1 = zu
+
+        var sinZu =
+            1 - ((1 + sin(zum1)) * (1 - fExct * sin(zum1)).pow(fExct)) / (exp((2 * yy) / -(tilesAtZoom / (2 * Math.PI))) * (1 + fExct * sin(
+                zum1
+            )).pow(fExct))
         zu = asin(
-            1 - ((1 + sin(zum1)) * Math.pow(
-                1 - fExct * sin(zum1),
-                fExct
-            )) / (exp((2 * yy) / -(tilesAtZoom / (2 * Math.PI))) * (1 + fExct * sin(
+            1 - ((1 + sin(zum1)) * (1 - fExct * sin(zum1)).pow(fExct)) / (exp((2 * yy) / -(tilesAtZoom / (2 * Math.PI))) * (1 + fExct * sin(
                 zum1
             )).pow(fExct))
         )
         while (Math.abs(zum1 - zu) >= merkElipsK) {
             zum1 = zu
-            zu = asin(
-                1 - ((1 + sin(zum1)) * Math.pow(
-                    1 - fExct * sin(zum1),
-                    fExct
-                )) / (exp((2 * yy) / -(tilesAtZoom / (2 * Math.PI))) * (1 + fExct * sin(
+            sinZu =
+                1 - ((1 + sin(zum1)) * (1 - fExct * sin(zum1)).pow(fExct)) / (exp((2 * yy) / -(tilesAtZoom / (2 * Math.PI))) * (1 + fExct * sin(
                     zum1
                 )).pow(fExct))
+            zu = asin(
+                sinZu
+//                1 - ((1 + sin(zum1)) * (1 - fExct * sin(zum1)).pow(fExct)) / (exp((2 * yy) / -(tilesAtZoom / (2 * Math.PI))) * (1 + fExct * sin(
+//                    zum1
+//                )).pow(fExct))
             )
         }
-        val result = zu * 180 / Math.PI
+
+        var result = zu * 180 / Math.PI
+        if (y >= (1 shl (z - 1)) + 1) {
+            result = 180 - zu
+        }
         return result
     }
+
 
     override fun url(): String {
         val unixTime = System.currentTimeMillis() / 1000
@@ -53,7 +62,6 @@ open class GISQLYandexTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
             val point =
                 Projection.reproject(
                     GILonLat(lon, lat, Projection.WGS84),
-                    Projection.WGS84,
                     Projection.WorldMercator
                 )
             val (x, y) = getTile(point, z)

@@ -1,6 +1,6 @@
 package com.example.mt.map.layer
 
-import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Rect
 import com.example.mt.map.renderer.GIXMLRenderer
 import com.example.mt.map.wkt.WktConverter
@@ -36,7 +36,7 @@ data class XMLLayer(
     rangeFrom,
     rangeTo,
     Projection.WGS84,
-    GIXMLRenderer()
+    GIXMLRenderer
 ) {
     val geometries =
         try {
@@ -47,12 +47,13 @@ data class XMLLayer(
 
     val mapper = LayerMapper()
     override suspend fun renderBitmap(
+        canvas: Canvas,
         area: Bounds,
         rect: Rect,
         opacity: Int,
         scale: Float
-    ): Bitmap? {
-        return renderer.renderBitmap(this, area, opacity, rect, scale)
+    ) {
+        renderer.renderBitmap(canvas, this, area, opacity, rect, scale)
     }
 
     fun save() {
@@ -62,13 +63,6 @@ data class XMLLayer(
         serializer.write(xmlLayer, output)
     }
 
-//    override fun copy_deep(update: (Layer) -> Layer): Layer {
-//        return update(this)
-//    }
-
-    //    private fun updateProjectState(update: (Project) -> Project) {
-    //        projectState.value.let { viewModelScope.launch { projectState.value = update(it) } }
-    //    }
     companion object {
         val registry = Registry()
         val strategy = RegistryStrategy(registry)
