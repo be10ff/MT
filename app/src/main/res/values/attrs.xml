@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CompassControl">
+        <attr name="startMargin" format="dimension"/>
+        <attr name="arrowWidth" format="dimension"/>
+        <attr name="arrowLength" format="dimension"/>
+        <attr name="arrowColor" format="color"/>
+    </declare-styleable>
+    <declare-styleable name="DirectionControll" parent = "CompassControl">
+        <attr name="startMargin"/>
+        <attr name="arrowWidth"/>
+        <attr name="arrowLength"/>
+        <attr name="arrowColor"/>
+        <attr name="fontSize" format="dimension"/>
+        <attr name="textColor" format="color"/>
+    </declare-styleable>
+</resources>

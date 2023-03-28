@@ -5,6 +5,7 @@ import android.widget.EditText
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mt.R
 import com.example.mt.ui.dialog.IHolder
+import com.example.mt.ui.view.onChange
 
 class ProjectHolder(val v: View, callback: LayerHolderCallback) : RecyclerView.ViewHolder(v),
     IHolder {
@@ -22,11 +23,7 @@ class ProjectHolder(val v: View, callback: LayerHolderCallback) : RecyclerView.V
         description.onChange { callback.onProjectDescription(it) }
     }
 
-    fun EditText.onChange(action: (String) -> Unit) {
-        setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) editableText?.let { action(it.toString()) }
-        }
-    }
+
 
     override fun unBind() {
         projectName.onFocusChangeListener = null

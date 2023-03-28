@@ -70,7 +70,6 @@ class TouchControl(
                 MotionEvent.ACTION_POINTER_DOWN -> {
                     multyClick = true
                     moveClick = true
-                    listener.onSetToDraft(false)
                 }
                 MotionEvent.ACTION_DOWN -> {
                     super.performClick()
@@ -80,7 +79,6 @@ class TouchControl(
                     moveClick = false
                     longClick = false
                     click = true
-                    listener.onSetToDraft(false)
                     previousX = x
                     previousY = y
                     activeId = event.getPointerId(0)
@@ -104,14 +102,15 @@ class TouchControl(
                     } else if (event.pointerCount == 2) {
                         listener.scaleViewBy(focus, scaleFactor)
                     }
-//                    listener.invalidate()
 
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (!moveClick) return true
+                    if (!moveClick) {
+                        listener.clickAt(Point(motionEvent.x.toInt(), motionEvent.y.toInt()))
+                        return true
+                    }
                     if (scaled) scaled = false
                     scaleFactor = 1f
-                    listener.onSetToDraft(true)
                     listener.updateMap()
                 }
                 MotionEvent.ACTION_CANCEL -> {

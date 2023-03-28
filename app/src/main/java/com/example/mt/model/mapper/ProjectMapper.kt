@@ -38,7 +38,8 @@ class ProjectMapper {
 //                            style =  it.style!!,
                             style = VectorStyle.default,
                             editableType = it.editable?.type,
-                            activeEdiable = it.editable?.active
+                            activeEdiable = it.editable?.active,
+                            isMarkersSource = it.markerSource ?: false
                         )
 
 //                        GILayerType.ON_LINE -> TrafficLayer(
@@ -64,8 +65,6 @@ class ProjectMapper {
                     }
 
                 },
-            markerFile = from.markers.file,
-            markerSource = from.markers.file,
             screen = Rect()
         )
     }
@@ -111,8 +110,8 @@ class ProjectMapper {
                                     }
                                 }
 
-                            }
-
+                            },
+                            markerSource = (it as? XMLLayer)?.isMarkersSource
                         )
                     }
             ),
@@ -126,10 +125,6 @@ class ProjectMapper {
                 )
             },
             description = GIPropertiesDescription(from.description),
-            markers = GIMarker(
-                file = from.markerFile,
-                source = from.markerSource
-            )
         )
     }
 }

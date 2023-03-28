@@ -5,18 +5,22 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.location.Location
+import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import com.example.mt.R
+import com.example.mt.map.wkt.WktPoint
+import com.example.mt.model.ControlState
+import com.example.mt.model.SensorState
 import com.example.mt.model.gi.GILonLat
 import com.example.mt.model.gi.Project
 import kotlin.math.acos
 import kotlin.math.hypot
 
 class PositionControl constructor(
-    map: View,
-    context: Context
-) : View(context), IControl {
+    context: Context,
+    attrs: AttributeSet? = null
+) : View(context, attrs), IControl {
 
 
     val image = BitmapFactory.decodeResource(context.resources, R.drawable.position_arrow)
@@ -25,30 +29,22 @@ class PositionControl constructor(
     var currentPosition: GILonLat? = null
     var direction = -Math.PI / 2
 
-    init {
-        (map.parent as? ViewGroup)?.addView(this)
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
         bringToFront()
     }
 
-    override val gpsConsumer: (Location?, Project) -> Unit = { location, project ->
+    override fun consume(state: ControlState) {
         currentPosition?.let { current ->
-
             originPosition = current
         }
-        location?.let {
-            currentPosition = GILonLat(location)
+        state.sensorState.location?.let {
+            currentPosition = GILonLat(it)
             currentPosition?.let {
-                project.mapToScreen(it)
+                state.project.mapToScreen(it)
             }?.let { point ->
-//                val mapLocation = intArrayOf(0, 0)
-//                map.getLocationOnScreen(mapLocation)
-//                mapLocation[0] -= image.height/2 + map.offsetX()
-//                mapLocation[1] -= image.width/2 + map.offsetY()
-//                x = (point.x + mapLocation[0]).toFloat()
-//                y = (point.y + mapLocation[1]).toFloat()
                 x = (point.x - image.height / 2).toFloat()
                 y = (point.y - image.width / 2).toFloat()
-                /**/
                 originPosition?.let { origin ->
                     currentPosition?.let { current ->
                         val hypot = hypot(current.lon - origin.lon, current.lat - origin.lat)
@@ -61,25 +57,12 @@ class PositionControl constructor(
 
                     }
                 }
-                /**/
                 invalidate()
             }
         }
-
     }
 
     override fun onDraw(canvas: Canvas?) {
-//        originPosition?.let{origin ->
-//            currentPosition?.let { current ->
-//                val hypot = hypot(current.lon - origin.lon, current.lat - origin.lat)
-//                if(hypot != 0.0){
-//                    val dirCos = (current.lon - origin.lon)/hypot
-//                    val dirSin = (current.lat - origin.lat)/hypot
-//                    direction = Math.toDegrees(if(dirSin > 0) acos(dirCos) else -acos(dirCos))
-//                }
-//
-//            }
-//        }
         _matrix.reset()
         _matrix.setRotate(direction.toFloat(), image.width / 2f, image.height / 2f)
         canvas?.drawBitmap(image, _matrix, null)

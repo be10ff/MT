@@ -2,6 +2,7 @@ package com.example.mt.ui.dialog.settings
 
 import android.view.MotionEvent
 import android.view.View
+import android.view.View.INVISIBLE
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
@@ -51,15 +52,17 @@ open class LayerHolder(v: View, callback: LayerHolderCallback, dragListener: OnS
             }
 
         }
-        reOrder.setOnTouchListener { v, event ->
+        reOrder.setOnTouchListener { _, event ->
             if (event.actionMasked == MotionEvent.ACTION_DOWN) dragListener.onStartDrag(this)
             false
         }
 
-        delete.setOnTouchListener { v, event ->
+        delete.setOnTouchListener { _, event ->
             if (event.actionMasked == MotionEvent.ACTION_DOWN) dragListener.onStartSwipe(this)
             false
         }
+
+        marker.visibility = INVISIBLE
     }
 
     override fun unBind() {

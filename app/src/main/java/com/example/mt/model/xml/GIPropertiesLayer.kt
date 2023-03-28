@@ -40,5 +40,9 @@ data class GIPropertiesLayer constructor(
 
     @field:Element(name = "Editable", required = false)
     @param:Element(name = "Editable", required = false)
-    var editable: GIEditable?
+    var editable: GIEditable?,
+
+    @field:Element(name = "markerSource", required = false)
+    @param:Element(name = "markerSource", required = false)
+    var markerSource: Boolean?
 )

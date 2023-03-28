@@ -7,8 +7,9 @@ import com.example.mt.model.gi.VectorStyle
 
 interface WktGeometry {
     val type: WKTGeometryType
-    val status: WKTGeometryStatus
     val attributes: MutableMap<String, DBaseField>
+    var selected: Boolean
+    var marker: Boolean
 
     fun toWKT(): String
     fun draw(canvas: Canvas, bounds: Bounds, scale: Float, style: VectorStyle)

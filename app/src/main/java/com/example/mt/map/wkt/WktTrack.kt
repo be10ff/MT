@@ -14,11 +14,10 @@ data class WktTrack(
     val file: String
 ) : WktGeometry {
     override val type: WKTGeometryType = WKTGeometryType.TRACK
-    override val status: WKTGeometryStatus = WKTGeometryStatus.NEW
     override val attributes: MutableMap<String, DBaseField> = mutableMapOf()
     val points = mutableListOf<WktPoint>()
-
-//    private var writer: BufferedWriter? = null
+    override var selected: Boolean = false
+    override var marker: Boolean = false
 
     init {
         File(file).bufferedReader().lines()
@@ -30,10 +29,6 @@ data class WktTrack(
                 points.addAll(it)
             }
     }
-
-//    fun initOutput() {
-//        writer = File(file).bufferedWriter()
-//    }
 
     private val writer: BufferedWriter by lazy {
         File(file).bufferedWriter()

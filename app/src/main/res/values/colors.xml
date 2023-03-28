@@ -23,6 +23,7 @@
     <color name="olive_yellow">#999950</color>
     <color name="olive_green">#424632</color>
     <color name="clean_green">#00ff00</color>
+    <color name="orange">#ff8000</color>
 
 
     <color name="control_dark">@color/olive_green</color>
@@ -31,4 +32,5 @@
     <color name="control_text_disable">@color/yellow_green</color>
     <color name="control_text_button_bg">@color/light_green</color>
     <color name="control_text_button_disable_bg">@color/light_gray</color>
+    <color name="transparent">#00000000</color>
 </resources>

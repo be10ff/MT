@@ -7,6 +7,7 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.os.Bundle
 import android.os.Environment
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,9 +17,14 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.mt.MainActivity
 import com.example.mt.R
+import com.example.mt.map.wkt.WktPoint
 import com.example.mt.model.Action
 import com.example.mt.model.BitmapState
+import com.example.mt.model.Status
 import com.example.mt.model.TrackState
+import com.example.mt.ui.dialog.info.GeometryCallback
+import com.example.mt.ui.dialog.info.InfoPopup
+import com.example.mt.ui.dialog.markers.MarkersDialog
 import com.example.mt.ui.dialog.settings.SettingsDialog
 import com.example.mt.ui.view.ControlListener
 import com.example.mt.ui.view.PositionControl
@@ -36,6 +42,7 @@ class MainFragment : Fragment(), ControlListener {
 
     private val fragmentViewModel: FragmentViewModel by activityViewModels()
     private var positionControl: PositionControl? = null
+    private var infoPopUp: InfoPopup? = null
 
     private val startForResultProject =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -68,23 +75,18 @@ class MainFragment : Fragment(), ControlListener {
         super.onViewCreated(view, savedInstanceState)
         setupObserve()
         setupGUI()
-//        val defaultPath =
-//            "${Environment.getExternalStorageDirectory().absolutePath}/DefaultProject.pro"
-//        val lastName = activity?.let {
-//            val key = it.resources.getString(R.string.key_last_project)
-//            it.getPreferences(Context.MODE_PRIVATE)?.getString(key, defaultPath)
-//        } ?: defaultPath
-//        fragmentViewModel.submitAction(Action.ProjectAction.Load(lastName))
-        positionControl = PositionControl(map, requireContext())
+        positionControl = PositionControl(requireContext())
+            .also{
+                main.addView(it)
+            }
     }
-
 
     @InternalCoroutinesApi
     private fun setupObserve() {
 
         lifecycleScope.launch {
             fragmentViewModel.permissionState
-                .filter { it }
+                .filter { it == Status.Granted }
                 .collectLatest {
                     val defaultPath =
                         "${Environment.getExternalStorageDirectory().absolutePath}/DefaultProject.pro"
@@ -92,17 +94,78 @@ class MainFragment : Fragment(), ControlListener {
                         val key = it.resources.getString(R.string.key_last_project)
                         it.getPreferences(Context.MODE_PRIVATE)?.getString(key, defaultPath)
                     } ?: defaultPath
+                    fragmentViewModel.submitAction(Action.PermissionAction.ManageFileGranted(Status.Consumed))
                     fragmentViewModel.submitAction(Action.ProjectAction.Load(lastName))
                 }
         }
 
         lifecycleScope.launch {
-            fragmentViewModel.reBitmapState
+            fragmentViewModel.bitmapState
                 .filterIsInstance<BitmapState.Defined>()
-                .collectLatest {
+                .onEach {
                     map.reDraw(it.bitmap)
-                }
+                }.collect()
         }
+
+        fragmentViewModel.selectedGeometryState
+            .onEach {  geometry ->
+                geometry?.let {
+                    if (geometry.selected)
+                        when {
+                            else -> {
+                                activity?.let {
+                                    InfoPopup(it, geometry, object : GeometryCallback {
+
+                                        override fun onEdit() {
+                                            (geometry as? WktPoint)?.let{
+                                                fragmentViewModel.submitAction(
+                                                    Action.GeometryAction.Edit(
+                                                        geometry
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        override fun onDelete() {
+                                            fragmentViewModel.submitAction(
+                                                Action.GeometryAction.Delete(
+                                                    geometry
+                                                )
+                                            )
+                                        }
+
+                                        override fun onSetPoi() {
+                                            (geometry as? WktPoint)?.let{
+                                            fragmentViewModel.submitAction(
+                                                Action.GeometryAction.SetPoi(
+                                                    geometry
+                                                    )
+                                                )
+
+                                            }
+                                        }
+
+                                        override fun onClose() {
+                                            (geometry as? WktPoint)?.let{
+                                                fragmentViewModel.submitAction(
+                                                    Action.GeometryAction.ChangeSelected(
+                                                        geometry
+                                                    )
+                                                )
+
+                                            }
+                                        }
+                                    })
+                                        .also{
+                                            infoPopUp = it
+                                        }
+                                        .showAtLocation(main, Gravity.TOP, 0, 0)
+                                }
+                            }
+                        }
+                } ?: run { /*infoPopUp?.dismiss()*/ }
+            }
+            .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.writeTrack }
@@ -121,29 +184,30 @@ class MainFragment : Fragment(), ControlListener {
         fragmentViewModel.buttonState
             .map { it.editGeometry }
             .onEach { state ->
-                btnEdit.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_edit)
+                infoPopUp?.edit?.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_edit)
             }
             .launchIn(lifecycleScope)
-
-        fragmentViewModel.buttonState
-            .map { it.deleteGeometry }
-            .onEach { state ->
-                btnDelete.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_delete)
-            }
-            .launchIn(lifecycleScope)
+        fragmentViewModel.selectedGeometryState
+            .onEach {
+                (it as? WktPoint)?.let{
+                    infoPopUp?.lonLat?.text = it.point.toString()
+                }
+            }.launchIn(lifecycleScope)
 
         lifecycleScope.launch {
             fragmentViewModel.controlState
-                .collectLatest { (location, project) ->
-                    positionControl?.gpsConsumer?.invoke(location, project)
-                    control_scale.gpsConsumer.invoke(location, project)
+                .collectLatest { state ->
+                    positionControl?.consume(state)
+                    control_scale.consume(state)
+//                    cDirection.consume(state)
+//                    cCompass.consume(state)
                 }
         }
     }
 
     private fun setupGUI() {
         control.listener = this
-        map.addOnLayoutChangeListener { v, left, top, right, bottom, _, _, _, _ ->
+        map.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
             fragmentViewModel.submitAction(
                 Action.MapAction.ViewRectChanged(
                     Rect(
@@ -155,11 +219,9 @@ class MainFragment : Fragment(), ControlListener {
                 )
             )
         }
+
+
         setupButtons()
-    }
-
-    override fun onSetToDraft(b: Boolean) {
-
     }
 
     override fun moveViewBy(x: Int, y: Int) {
@@ -174,27 +236,11 @@ class MainFragment : Fragment(), ControlListener {
         fragmentViewModel.submitAction(Action.MapAction.Update)
     }
 
+    override fun clickAt(point: Point) {
+        fragmentViewModel.submitAction(Action.MapAction.ClickAt(point))
+    }
+
     private fun setupButtons() {
-        fabGps.setOnClickListener {
-            if (!eflGps.isOpen()) {
-                eflEdit.close()
-                eflCompass.close()
-            }
-        }
-
-        fabCompass.setOnClickListener {
-            if (!eflCompass.isOpen()) {
-                eflEdit.close()
-                eflGps.close()
-            }
-        }
-
-        fabEdit.setOnClickListener {
-            if (!eflEdit.isOpen()) {
-                eflCompass.close()
-                eflGps.close()
-            }
-        }
 
         //fabGps
         btnWriteTrack.setOnClickListener {
@@ -223,19 +269,9 @@ class MainFragment : Fragment(), ControlListener {
 
         }
 
-
-//        fabCompass
-        btnMarkers
-        btnOpenEdit
-        btnOptions
-        btnOpenProject
-
-        //fabEdit
-        btnEdit
-        btnDelete
-        btnAttributes
-        btnAddPoints
-        btnClose
+        btnMarkers.setOnClickListener {
+            MarkersDialog().show(childFragmentManager, MarkersDialog.TAG)
+        }
 
     }
 

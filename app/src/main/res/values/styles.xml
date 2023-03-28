@@ -8,5 +8,10 @@
         <item name="android:textSize">@dimen/text_size</item>
     </style>
 
+    <style name="FullScreenDialgStyle">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowIsFloating">false</item>
+    </style>
+
 
 </resources>

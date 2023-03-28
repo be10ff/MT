@@ -12,4 +12,5 @@ interface LayerHolderCallback {
     fun onRemove(holder: RecyclerView.ViewHolder)
     fun onMove(from: RecyclerView.ViewHolder, to: RecyclerView.ViewHolder)
     fun onType(holder: RecyclerView.ViewHolder, type: SqlProjection)
+    fun onMarkersSource(holder: RecyclerView.ViewHolder)
 }

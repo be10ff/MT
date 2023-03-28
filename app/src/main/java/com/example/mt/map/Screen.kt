@@ -1,6 +1,7 @@
 package com.example.mt.map
 
 import android.graphics.Canvas
+import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
@@ -40,6 +41,28 @@ class Screen(val rect: Rect, val bounds: Bounds) {
 
     fun toScreen(bounds: Bounds): RectF =
         (toScreen(bounds.topLeft) to toScreen(bounds.bottomRight)).rectF()
+
+    fun screenToLonLat(point: Point) : GILonLat {
+        val pixelWidth = bounds.width / rect.width()
+        val pixelHeight = bounds.height /rect.height()
+        return GILonLat(
+            bounds.left + pixelWidth*point.x,
+            bounds.top - pixelHeight*point.y,
+            bounds.projection
+        )
+    }
+
+    fun touchArea(point: Point, slop: Int) : Bounds {
+        val pixelWidth = bounds.width / rect.width()
+        val pixelHeight = bounds.height /rect.height()
+        return Bounds(
+            bounds.projection,
+            bounds.left + pixelWidth*(point.x - slop),
+            bounds.top - pixelHeight*(point.y - slop),
+            bounds.left + pixelWidth*(point.x + slop),
+            bounds.top - pixelHeight*(point.y + slop)
+        )
+    }
 
 }
 

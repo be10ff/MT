@@ -4,13 +4,15 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.location.Location
 import com.example.mt.map.layer.Layer
+import com.example.mt.map.layer.XMLLayer
+import com.example.mt.map.wkt.WktGeometry
+import com.example.mt.map.wkt.WktPoint
 import com.example.mt.model.xml.SqlProjection
 
 sealed class Action {
     sealed class PermissionAction : Action() {
         data class GPSEnabled(val enabled: Boolean) : PermissionAction()
-        data class LocationUpdated(val location: Location) : PermissionAction()
-        data class ManageFileGranted(val granted: Boolean) : PermissionAction()
+        data class ManageFileGranted(val granted: Status) : PermissionAction()
     }
 
     sealed class MapAction : Action() {
@@ -19,6 +21,7 @@ sealed class Action {
         data class ScaleMapBy(val focus: Point, val factor: Float) : MapAction()
         data class ViewRectChanged(val rect: Rect) : MapAction()
         object Update : MapAction()
+        data class ClickAt(val point: Point) : MapAction()
     }
 
     sealed class ProjectAction : Action() {
@@ -30,9 +33,20 @@ sealed class Action {
         data class RemoveLayer(val layer: Layer) : Action()
         data class MoveLayer(val from: Layer, val to: Layer) : Action()
         data class TypeChanged(val layer: Layer, val type: SqlProjection) : Action()
+        data class MarkersSourceSelected(val layer: XMLLayer) : Action()
+        //ToDo same as data class SetPoi(val geometry: WktPoint) : GeometryAction()
+        data class MarkersSelectionChanged(val point: WktPoint) : Action()
         data class NameChanged(val name: String) : Action()
         data class PathChanged(val path: String) : Action()
         data class DescriptionChanged(val description: String) : Action()
+    }
+
+    sealed class GeometryAction: Action(){
+        data class Delete(val geometry: WktGeometry) : GeometryAction()
+        data class Edit(val geometry: WktPoint) : GeometryAction()
+        //ToDo same as  MarkersSelectionChanged(val point: WktPoint) : Action()
+        data class SetPoi(val geometry: WktPoint) : GeometryAction()
+        data class ChangeSelected(val geometry: WktPoint) : GeometryAction()
     }
 
     sealed class ButtonAction : Action() {

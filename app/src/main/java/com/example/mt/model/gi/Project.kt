@@ -5,6 +5,7 @@ import android.graphics.Rect
 import com.example.mt.map.MapUtils
 import com.example.mt.map.Screen
 import com.example.mt.map.layer.Layer
+import com.example.mt.map.wkt.WktPoint
 import kotlin.math.hypot
 
 data class Project(
@@ -13,8 +14,6 @@ data class Project(
     val description: String?,
     val bounds: Bounds,
     val layers: List<Layer>,
-    val markerFile: String,
-    val markerSource: String,
     val screen: Rect
 ) {
     val pixelWidth get() = bounds.width / screen.width()
@@ -96,20 +95,10 @@ data class Project(
         }
     }
 
+    fun getScreen() : Screen = Screen(screen, bounds)
+
     fun mapToScreen(lonlat: GILonLat): PointF {
-//        val wgsBounds = bounds.reproject(Projection.WGS84)
-//        val _pixelWidth = wgsBounds.width / screen.width()
-//        val _pixelHeight = wgsBounds.height / screen.height()
-//        val res = try {
-//            /*val res =*/ Point(
-//                ((lonlat.lon - wgsBounds.left) / _pixelWidth).roundToInt(),
-//                ((wgsBounds.top - lonlat.lat) / _pixelHeight).roundToInt()
-//            )
-//        } catch (e: Exception) {
-//            Point(0, 0)
-//        }
         return Screen(screen, bounds).toScreen(lonlat)
-//        return res
     }
 
     val metersInPixel: Double
@@ -127,9 +116,7 @@ data class Project(
             description = "DefaultProject",
             bounds = Bounds.InitialState,
             layers = emptyList(),
-            markerFile = "",
-            markerSource = "",
-            screen = Rect()
+            screen = Rect(),
         )
     }
 }

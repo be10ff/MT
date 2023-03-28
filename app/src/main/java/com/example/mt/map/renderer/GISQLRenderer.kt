@@ -37,7 +37,6 @@ object GISQLRenderer : GIRenderer() {
                     val minScale = MapUtils.scale2z(sqlLayer.rangeTo ?: 0)
                     val maxScale = MapUtils.scale2z(sqlLayer.rangeFrom ?: 0)
 
-
                     if ((minScale <= zoom && maxScale >= zoom))
                         try {
                             val leftTop =
@@ -51,8 +50,7 @@ object GISQLRenderer : GIRenderer() {
                                 )
 
                             val sqlString =
-                                "SELECT image, x, y FROM tiles WHERE (x >= ${leftTop.x} AND x <= ${rightBottom.x}) AND (y >= ${leftTop.y} AND y <= ${rightBottom.x}) AND z = ${17 - z}"
-
+                                "SELECT image, x, y FROM tiles WHERE (x >= ${leftTop.x} AND x <= ${rightBottom.x}) AND (y >= ${leftTop.y} AND y <= ${rightBottom.y}) AND z = ${17 - z}"
                             sqlLayer.proceedSql { db ->
                                 db.rawQuery(sqlString, null)
                                     ?.let { cursor ->

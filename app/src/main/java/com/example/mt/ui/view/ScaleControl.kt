@@ -7,6 +7,10 @@ import android.view.LayoutInflater
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.example.mt.R
+import com.example.mt.model.ControlState
+import com.example.mt.model.SensorState
+import com.example.mt.model.gi.GILonLat
+import com.example.mt.model.gi.GILonLat.Companion.coordString
 import com.example.mt.model.gi.Project
 import kotlinx.android.synthetic.main.control_scale.view.*
 import kotlin.math.floor
@@ -14,9 +18,8 @@ import kotlin.math.roundToInt
 
 class ScaleControl @JvmOverloads constructor(
     context: Context,
-    attributeSet: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : ConstraintLayout(context, attributeSet, defStyleAttr), IControl {
+    attributeSet: AttributeSet? = null
+) : ConstraintLayout(context, attributeSet), IControl {
 
     val text: TextView
     val lon: TextView
@@ -41,7 +44,8 @@ class ScaleControl @JvmOverloads constructor(
             500000,
             1000000,
             5000000,
-            10000000
+            10000000,
+            50000000
         )
     }
 
@@ -56,24 +60,25 @@ class ScaleControl @JvmOverloads constructor(
         }
     }
 
-    fun coordString(coord: Double): String {
-        val dergees = floor(coord).toInt()
-        val mins = floor((coord - dergees) * 60).toInt()
-        val secs = ((coord - dergees) * 60 - mins) * 60
-        return String.format("%d° %d\' %.4f\"", dergees, mins, secs)
-    }
+    override fun consume(state: ControlState) {
+        state.sensorState.location?.let {
+            GILonLat(it).also {
+                tvLon.text = coordString(it).first
+                tvLat.text = coordString(it).second
+            }
 
-    override val gpsConsumer: (Location?, Project) -> Unit = { location, project ->
-        location?.let {
-            tvLon.text = coordString(it.longitude)
-            tvLat.text = coordString(it.latitude)
         }
 
         nominals.lastOrNull { cur ->
-            cur < size * project.metersInPixel
+            cur < size * state.project.metersInPixel
         }?.also { nearest ->
-            text.layoutParams.width = (nearest / project.metersInPixel).roundToInt()
-            tvScale.text = if (nearest < 1000) "$nearest m" else "${nearest / 1000} km"
+            text.layoutParams.width = (nearest / state.project.metersInPixel).roundToInt()
+
+            tvScale.text = when{
+                nearest <= 1000 -> {"$nearest m"}
+                nearest > 1000 && nearest < 1000000 -> {"${nearest / 1000} km"}
+                else -> {"${nearest / 1000000}K km"}
+            }
         }
 
     }

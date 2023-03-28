@@ -2,6 +2,8 @@ package com.example.mt.ui.dialog.settings
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
@@ -11,7 +13,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mt.MainActivity
 import com.example.mt.R
 import com.example.mt.map.MapUtils
+import com.example.mt.map.layer.XMLLayer
 import com.example.mt.model.Action
+import com.example.mt.model.xml.EditableType
 import com.example.mt.model.xml.SqlProjection
 import com.example.mt.ui.dialog.AbstractDialog
 import kotlinx.android.synthetic.main.dialog_settings.*
@@ -81,6 +85,14 @@ class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragList
             }
         }
 
+        override fun onMarkersSource(holder: RecyclerView.ViewHolder) {
+            (adapter.getLayer(holder) as? XMLLayer)
+                ?.takeIf{ EditableType.POI == it.editableType}
+                ?.let{ layer ->
+                fragmentViewModel.submitAction(Action.ProjectAction.MarkersSourceSelected(layer))
+            }
+        }
+
         override fun onProjectName(name: String) =
             fragmentViewModel.submitAction(Action.ProjectAction.NameChanged(name))
 
@@ -94,6 +106,11 @@ class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragList
     private val adapter = SettingsAdapter(callback = callback, dragListener = this)
     private val touchCallback = LayerTouchHelperCallback(adapter)
     private val helper = ItemTouchHelper(touchCallback)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_TITLE, R.style.FullScreenDialgStyle)
+    }
 
     override fun setupObserve() {
         lifecycleScope.launch {
@@ -110,6 +127,7 @@ class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragList
     }
 
     override fun setupGUI(savedInstanceState: Bundle?) {
+        dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         rvLayers.layoutManager = LinearLayoutManager(requireContext())
         rvLayers.adapter = adapter
         helper.attachToRecyclerView(rvLayers)

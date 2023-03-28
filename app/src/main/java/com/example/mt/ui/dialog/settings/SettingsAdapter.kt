@@ -1,6 +1,8 @@
 package com.example.mt.ui.dialog.settings
 
 import android.view.LayoutInflater
+import android.view.View
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -8,6 +10,7 @@ import com.example.mt.R
 import com.example.mt.map.MapUtils
 import com.example.mt.map.layer.Layer
 import com.example.mt.map.layer.SQLLayer
+import com.example.mt.map.layer.XMLLayer
 import com.example.mt.model.gi.Project
 import com.example.mt.model.xml.GILayerType
 import com.example.mt.model.xml.SqlProjection
@@ -26,6 +29,10 @@ class SettingsAdapter(
             TYPE_SQL -> SQLLayerHolder(
                 LayoutInflater.from(parent.context)
                     .inflate(R.layout.item_sqllayer_list, parent, false), callback, dragListener
+            )
+            TYPE_XML -> XMLLayerHolder(
+                LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_xmllayer_list, parent, false), callback, dragListener
             )
             TYPE_DEFAULT -> LayerHolder(
                 LayoutInflater.from(parent.context)
@@ -63,12 +70,19 @@ class SettingsAdapter(
                     range.selectedMaxValue = (max.toFloat())
                     rangeMin.text = min.toString()
                     rangeMax.text = max.toString()
+                marker.visibility= View.INVISIBLE
                 }
             }
             (holder as? SQLLayerHolder)?.let { sqlHolder ->
                 (layers[position] as? SQLLayer)?.let { sqlLayer ->
                     sqlHolder.tileProjection.isChecked =
                         sqlLayer.sqlProjection == SqlProjection.GOOGLE
+                }
+            }
+            (holder as? XMLLayerHolder)?.let { sqlHolder ->
+                (layers[position] as? XMLLayer)?.let { xmlLayer ->
+                    sqlHolder.marker.visibility = VISIBLE
+                    sqlHolder.marker.setImageResource(if (xmlLayer.isMarkersSource) R.drawable.source_exist else R.drawable.no_source)
                 }
             }
         }

@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.Settings
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -20,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.mt.model.Action
 import com.example.mt.model.PermissionStatus
+import com.example.mt.model.Status
 import com.example.mt.ui.main.FragmentViewModel
 import com.example.mt.ui.main.MainFragment
 import com.nabinbhandari.android.permissions.PermissionHandler
@@ -33,7 +35,11 @@ class MainActivity : AppCompatActivity() {
     private var locationAlertDialog: AlertDialog? = null
     private var manageFilesAlertDialog: AlertDialog? = null
 
-//    private val activityViewModel: FragmentViewModel by viewModels()
+    private var lastExitAttemptTime = 0L
+
+    override fun onBackPressed() {
+        if((System.currentTimeMillis() - lastExitAttemptTime) < 500 ) super.onBackPressed() else lastExitAttemptTime = System.currentTimeMillis()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +54,7 @@ class MainActivity : AppCompatActivity() {
 
         subscribeToLocationPermissionListener()
         subscribeToManageFilesPermissionListener()
+
     }
 
     override fun onStop() {
@@ -70,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             when (status) {
                 is PermissionStatus.Denied -> showManageFilesPermissionNeededDialog()
                 else -> {
-                    fragmentViewModel.submitAction(Action.PermissionAction.ManageFileGranted(true))
+                    fragmentViewModel.submitAction(Action.PermissionAction.ManageFileGranted(Status.Granted))
                 }
             }
         }.launchIn(lifecycleScope)
@@ -155,15 +162,15 @@ class MainActivity : AppCompatActivity() {
                 val WRITE_EXTERNAL_STORAGE = grantResults[0] == PackageManager.PERMISSION_GRANTED
                 if (WRITE_EXTERNAL_STORAGE) {
                     // perform action when allow permission success
+                    fragmentViewModel.submitAction(
+                        Action.PermissionAction.ManageFileGranted(
+                            Status.Granted
+                        )
+                    )
                 } else {
                     Toast.makeText(this, "Allow permission for storage access!", Toast.LENGTH_SHORT)
                         .show()
                 }
-                fragmentViewModel.submitAction(
-                    Action.PermissionAction.ManageFileGranted(
-                        WRITE_EXTERNAL_STORAGE
-                    )
-                )
             }
 
         }
@@ -174,7 +181,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 2296) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 if (Environment.isExternalStorageManager()) {
-                    fragmentViewModel.submitAction(Action.PermissionAction.ManageFileGranted(true))
+                    fragmentViewModel.submitAction(Action.PermissionAction.ManageFileGranted(Status.Granted))
                 }
             }
         }

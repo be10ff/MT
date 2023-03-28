@@ -26,6 +26,7 @@ data class XMLLayer(
     override val rangeFrom: Int?,
     override val rangeTo: Int?,
     val style: VectorStyle,
+    val isMarkersSource: Boolean,
     val editableType: EditableType?,
     val activeEdiable: Boolean?
 ) : Layer(

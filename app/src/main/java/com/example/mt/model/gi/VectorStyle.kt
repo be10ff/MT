@@ -9,11 +9,23 @@ data class VectorStyle(
     val pen: Paint,
     val brush: Paint,
     val opacity: Int,
-    val image: Bitmap
+    val image: Bitmap,
+    val imageSelected: Bitmap,
+    val marker: Bitmap
 ) {
     companion object {
         val fill = Paint().apply {
             color = Color.BLUE
+            style = Paint.Style.FILL
+        }
+
+        val fillSelected = Paint().apply {
+            color = Color.RED
+            style = Paint.Style.FILL
+        }
+
+        val fillMarker = Paint().apply {
+            color = Color.MAGENTA
             style = Paint.Style.FILL
         }
 
@@ -26,12 +38,27 @@ data class VectorStyle(
         val bitmap = Bitmap.createBitmap(
             48,
             48,
-            Bitmap.Config.RGB_565
+            Bitmap.Config.ARGB_8888
         ).apply {
             Canvas(this).drawCircle(24f, 24f, 24f, fill)
         }
+        val bitmapSelected = Bitmap.createBitmap(
+            48,
+            48,
+            Bitmap.Config.ARGB_8888
+        ).apply {
+            Canvas(this).drawCircle(24f, 24f, 24f, fillSelected)
+        }
 
-        val default = VectorStyle(line, fill, 0, bitmap)
+        val marker = Bitmap.createBitmap(
+            48,
+            48,
+            Bitmap.Config.ARGB_8888
+        ).apply {
+            Canvas(this).drawCircle(24f, 24f, 24f, fillMarker)
+        }
+
+        val default = VectorStyle(line, fill, 0, bitmap, bitmapSelected, marker)
 
     }
 }

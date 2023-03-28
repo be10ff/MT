@@ -33,8 +33,6 @@ sealed class Layer(
         scale: Float
     )
 
-//    abstract fun copy_deep (update: (Layer) -> Layer ) : Lay
-
     companion object {
         fun createPoiLayer(project: String, fileName: String): XMLLayer {
             val dir =
@@ -46,11 +44,12 @@ sealed class Layer(
                 type = GILayerType.XML,
                 enabled = true,
                 source = Environment.getExternalStorageDirectory().absolutePath + File.separator + project + File.separator + fileName,
-                rangeFrom = null,
-                rangeTo = null,
+                rangeFrom = 0,
+                rangeTo = 24,
                 editableType = EditableType.POI,
                 activeEdiable = true,
-                style = VectorStyle.default
+                style = VectorStyle.default,
+                isMarkersSource = true
             )
         }
 
@@ -64,11 +63,12 @@ sealed class Layer(
                 type = GILayerType.XML,
                 enabled = true,
                 source = Environment.getExternalStorageDirectory().absolutePath + File.separator + project + File.separator + fileName,
-                rangeFrom = null,
-                rangeTo = null,
+                rangeFrom = 0,
+                rangeTo = 24,
                 editableType = EditableType.TRACK,
                 activeEdiable = true,
-                style = VectorStyle.default
+                style = VectorStyle.default,
+                isMarkersSource = false
             )
         }
 
@@ -112,7 +112,8 @@ sealed class Layer(
                 rangeTo = null,
                 editableType = EditableType.TRACK,
                 activeEdiable = true,
-                style = VectorStyle.default
+                style = VectorStyle.default,
+                isMarkersSource = false
             )
         }
 

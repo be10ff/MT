@@ -9,19 +9,16 @@ import com.example.mt.model.gi.GILonLat
 import com.example.mt.model.gi.Projection
 import com.example.mt.model.gi.VectorStyle
 
-//@Root(name = "POINT")
 data class WktPoint(
-    val point: GILonLat
-) : WktGeometry/*(WKTGeometryType.POINT, WKTGeometryStatus.NEW)*/ {
+    var point: GILonLat
+) : WktGeometry {
     override val type: WKTGeometryType = WKTGeometryType.POINT
-    override val status: WKTGeometryStatus = WKTGeometryStatus.NEW
     override val attributes: MutableMap<String, DBaseField> = mutableMapOf()
-    val lon = point.lon
-    val lat = point.lat
     val inMap = Projection.reproject(point, Projection.WorldMercator)
-    var trackId = -1
+    override var selected: Boolean = false
+    override var marker: Boolean = false
 
-    override fun toWKT(): String = "POINT($lon $lat)"
+    override fun toWKT(): String = "POINT(${point.lon} ${point.lat})"
 
     override fun draw(canvas: Canvas, bounds: Bounds, scale: Float, style: VectorStyle) {
         val screen = Screen(canvas, bounds)
@@ -34,8 +31,11 @@ data class WktPoint(
             screenPoint.y + scale * style.image.height / 2
         )
 
-        canvas.drawBitmap(style.image, src, dst, style.pen)
-        canvas.drawBitmap(style.image, src, dst, style.brush)
+        canvas.drawBitmap(
+            if(selected) style.imageSelected else if(marker) style.marker else style.image,
+            src,
+            dst,
+            null)
     }
 
     override fun paint(canvas: Canvas, bounds: Bounds, style: VectorStyle) {}

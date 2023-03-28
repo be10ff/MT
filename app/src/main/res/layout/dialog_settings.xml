@@ -2,7 +2,9 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:layout_margin="@dimen/block_padding"
+    android:background="@color/transparent">
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddLayer"
@@ -11,6 +13,7 @@
         android:layout_margin="@dimen/btn_margin"
         android:background="@color/control_icon"
         android:src="@drawable/ic_add"
+        app:backgroundTint="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -19,6 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintBottom_toTopOf="@+id/fabAddLayer"
+        android:background="@color/transparent"
         app:layout_constraintTop_toTopOf="parent" />
 
 

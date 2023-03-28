@@ -25,8 +25,4 @@ data class GIPropertiesProject /*@JvmOverloads*/ constructor(
     @field:Element(name = "Bounds")
     @param:Element(name = "Bounds")
     var bounds: GIBounds,
-
-    @field:Element(name = "Markers")
-    @param:Element(name = "Markers")
-    var markers: GIMarker
 )
