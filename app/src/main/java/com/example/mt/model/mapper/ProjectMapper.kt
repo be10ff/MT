@@ -1,6 +1,7 @@
 package com.example.mt.model.mapper
 
 import android.graphics.Rect
+import com.example.mt.map.layer.FolderLayer
 import com.example.mt.map.layer.SQLLayer
 import com.example.mt.map.layer.XMLLayer
 import com.example.mt.model.gi.Bounds
@@ -42,6 +43,17 @@ class ProjectMapper {
                             editableType = it.editable?.type,
                             activeEdiable = it.editable?.active ?: false,
                             isMarkersSource = it.markerSource ?: false
+                        )
+
+                        GILayerType.FOLDER -> FolderLayer(
+                            name = it.name,
+                            type = it.type,
+                            enabled = it.enabled,
+                            source = it.source.name,
+                            rangeFrom = it.range.from.toIntOrNull(),
+                            rangeTo = it.range.to.toIntOrNull(),
+                            sqlProjection = it.sqlProjection ?: SqlProjection.GOOGLE,
+                            sqldb = it.sqlDb ?: GISQLDB()
                         )
 
 //                        GILayerType.ON_LINE -> TrafficLayer(

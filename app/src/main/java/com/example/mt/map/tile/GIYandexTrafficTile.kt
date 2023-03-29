@@ -7,5 +7,4 @@ class GIYandexTrafficTile(x: Int, y: Int, z: Int) : GISQLYandexTile(x, y, z) {
     val timestamp: Long = System.currentTimeMillis() / 1000
     var bitmap: Bitmap? = null
     var usedAtLastTime = REUSE
-
 }

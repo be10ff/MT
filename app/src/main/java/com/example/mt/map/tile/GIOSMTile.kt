@@ -3,7 +3,7 @@ package com.example.mt.map.tile
 import kotlin.math.*
 
 //GITileInfoOSM
-class GIOSMTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
+open class GIOSMTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
 
 //   constructor(z: Int, lon: Double, lat: Double) : this(
 //       x = ((lon + 180) / 360 * (1 shl z)).toInt(),
@@ -23,7 +23,7 @@ class GIOSMTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
         )
     )
 
-    override fun url(): String = "http://a.tile.openstreetmap.org/$z/$x/$y.png"
+//    override fun url(): String = "http://a.tile.openstreetmap.org/$z/$x/$y.png"
 
     companion object {
         fun from(z: Int, lon: Double, lat: Double): GIOSMTile {

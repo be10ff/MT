@@ -50,7 +50,7 @@ open class GISQLYandexTile(x: Int, y: Int, z: Int) : GITile(x, y, z) {
     }
 
 
-    override fun url(): String {
+    /*override*/ fun url(): String {
         val unixTime = System.currentTimeMillis() / 1000
         return "http://tile.openstreetmap.org/$z/$x/$y.png"
 //        http://tile.openstreetmap.org/2/1/1.png

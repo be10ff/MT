@@ -13,8 +13,6 @@ sealed class GITile(
 
     abstract fun tile2lat(y: Int, z: Int): Double
 
-    abstract fun url(): String
-
     fun tile2lon(x: Int, z: Int): Double {
         return x / 2.0.pow(z) * 360 - 180
     }

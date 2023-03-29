@@ -72,7 +72,7 @@ sealed class Layer(
             )
         }
 
-        fun addSQLiteLayer(fileName: String): SQLLayer {
+        private fun addSQLiteLayer(fileName: String): SQLLayer {
             return SQLLayer(
                 name = fileName,
                 type = GILayerType.SQL,
@@ -102,7 +102,7 @@ sealed class Layer(
 
         }
 
-        fun addXmlLayer(fileName: String): XMLLayer {
+        private fun addXmlLayer(fileName: String): XMLLayer {
             return XMLLayer(
                 name = fileName,
                 type = GILayerType.XML,
@@ -117,20 +117,51 @@ sealed class Layer(
             )
         }
 
+        private fun addFolderLayer(fileName: String): FolderLayer {
+            val folder = File(fileName).parent?.let{
+                File(it).parent
+            } ?: ""
+            return FolderLayer(
+                name = folder,
+                type = GILayerType.FOLDER,
+                enabled = true,
+                source = folder,
+                rangeFrom = null,
+                rangeTo = null,
+                sqlProjection = SqlProjection.GOOGLE,
+                sqldb = GISQLDB()
+            ).run {
+                File(folder).list { file, s ->
+                    s.startsWith("Z")
+                }?.mapNotNull{
+                    it.substring(1).toIntOrNull()
+                }?.let{
+                    sqldb.maxZ = it.max()
+                    sqldb.minZ = it.min()
+                }
+                copy(
+                    rangeTo = MapUtils.z2scale(sqldb.minZ),
+                    rangeFrom = MapUtils.z2scale(sqldb.maxZ)
+                )
+            }
+        }
+
         fun addLayer(fileName: String): Layer? {
             return when (File(fileName).extension) {
                 "sqlitedb" -> GILayerType.SQL
                 "xml" -> GILayerType.XML
+                "png" -> GILayerType.FOLDER
                 else -> null
             }?.let { type ->
                 addLayer(type, fileName)
             }
         }
 
-        fun addLayer(type: GILayerType, fileName: String): Layer? {
+        private fun addLayer(type: GILayerType, fileName: String): Layer? {
             return when (type) {
                 GILayerType.SQL -> addSQLiteLayer(fileName)
                 GILayerType.XML -> addXmlLayer(fileName)
+                GILayerType.FOLDER -> addFolderLayer(fileName)
                 else -> null
             }
         }

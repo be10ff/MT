@@ -21,6 +21,7 @@ import com.example.mt.functional.ErrorHandlerManager
 import com.example.mt.functional.updateFlow
 import com.example.mt.functional.windowed
 import com.example.mt.map.MapUtils
+import com.example.mt.map.layer.FolderLayer
 import com.example.mt.map.layer.Layer
 import com.example.mt.map.layer.SQLLayer
 import com.example.mt.map.layer.XMLLayer
@@ -309,6 +310,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     this[indexOf(action.layer)] = when (action.layer) {
                         is SQLLayer -> action.layer.copy(enabled = action.enabled)
                         is XMLLayer -> action.layer.copy(enabled = action.enabled)
+                        is FolderLayer -> action.layer.copy(enabled = action.enabled)
                         else -> action.layer
                     }
                 })
@@ -325,6 +327,10 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                             rangeFrom = action.from,
                             rangeTo = action.to
                         )
+                        is FolderLayer -> action.layer.copy(
+                            rangeFrom = action.from,
+                            rangeTo = action.to
+                        )
                         else -> action.layer
                     }
                 })
@@ -334,6 +340,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 it.copy(layers = it.layers.toMutableList().apply {
                     this[indexOf(action.layer)] = when (action.layer) {
                         is SQLLayer -> action.layer.copy(sqlProjection = action.type)
+                        is FolderLayer -> action.layer.copy(sqlProjection = action.type)
                         else -> action.layer
                     }
                 })
