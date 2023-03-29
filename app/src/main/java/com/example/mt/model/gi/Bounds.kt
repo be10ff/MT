@@ -1,5 +1,9 @@
 package com.example.mt.model.gi
 
+import android.app.Application
+import android.util.Log
+import android.widget.Toast
+
 data class Bounds(
     val projection: Projection,
     val left: Double,
@@ -21,9 +25,6 @@ data class Bounds(
 //        TODO("Not yet implemented")
 //    }
 
-//    fun leftTop() = GILonLat(left, top)
-//
-//    fun rightBottom() = GILonLat(right, bottom)
 
     fun reproject(projection: Projection): Bounds {
         return if (this.projection != projection) {

@@ -2,8 +2,8 @@ package com.example.mt.map.wkt
 
 import android.graphics.Canvas
 import android.graphics.Rect
-import com.example.mt.map.Screen
 import com.example.mt.model.gi.Bounds
+import com.example.mt.model.gi.Project
 import com.example.mt.model.gi.VectorStyle
 import java.io.BufferedWriter
 import java.io.File
@@ -11,13 +11,13 @@ import kotlin.math.hypot
 import kotlin.streams.asSequence
 
 data class WktTrack(
-    val file: String
+    val file: String,
+    override val attributes: MutableMap<String, DBaseField> = mutableMapOf(),
+    override var selected: Boolean = false,
+    override var marker: Boolean = false
 ) : WktGeometry {
     override val type: WKTGeometryType = WKTGeometryType.TRACK
-    override val attributes: MutableMap<String, DBaseField> = mutableMapOf()
     val points = mutableListOf<WktPoint>()
-    override var selected: Boolean = false
-    override var marker: Boolean = false
 
     init {
         File(file).bufferedReader().lines()
@@ -42,7 +42,7 @@ data class WktTrack(
     override fun draw(canvas: Canvas, bounds: Bounds, scale: Float, style: VectorStyle) {
         var counter = 0
         val rect = Rect(0, 0, canvas.width, canvas.height)
-        val screen = Screen(rect, bounds)
+        val pixelWeight = (bounds.right - bounds.left) / rect.width().toFloat()
         while (counter < points.size - 1) {
             var currentIndex = counter + 1
             while (currentIndex < points.size - 1) {
@@ -50,12 +50,12 @@ data class WktTrack(
                     points[currentIndex].inMap.lon - points[counter].inMap.lon,
                     points[currentIndex].inMap.lat - points[counter].inMap.lat
                 )
-                if (distance > 5 * screen.pixelWeight) break
+                if (distance > 5 * pixelWeight) break
                 currentIndex += 1
             }
             if (bounds.contains(points[currentIndex].point) || bounds.contains(points[counter].point)) {
-                val prev = screen.toScreen(points[counter].point)
-                val current = screen.toScreen(points[currentIndex].point)
+                val prev = Project.toScreen(canvas, bounds, points[counter].point)
+                val current = Project.toScreen(canvas, bounds, points[currentIndex].point)
                 canvas.drawLine(prev.x, prev.y, current.x, current.y, style.pen)
             }
             counter = currentIndex

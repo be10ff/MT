@@ -6,14 +6,17 @@ import androidx.appcompat.widget.SwitchCompat
 import com.example.mt.R
 import com.example.mt.model.xml.SqlProjection
 
-class XMLLayerHolder(v: View, callback: LayerHolderCallback, dragListener: OnStartDragListener) :
-    LayerHolder(v, callback, dragListener) {
+class XMLLayerHolder(v: View) :
+    LayerHolder(v) {
 
 //    val marker: ImageView
 
     init {
         marker.visibility = View.VISIBLE
-//        marker = v.findViewById(R.id.ivMarker)
+    }
+
+    override fun bind(callback: LayerHolderCallback, dragListener: OnStartDragListener) {
+        super.bind(callback, dragListener)
         marker.setOnClickListener {
             callback.onMarkersSource(this)
         }

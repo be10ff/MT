@@ -28,7 +28,7 @@ data class XMLLayer(
     val style: VectorStyle,
     val isMarkersSource: Boolean,
     val editableType: EditableType?,
-    val activeEdiable: Boolean?
+    val activeEdiable: Boolean
 ) : Layer(
     name,
     type,

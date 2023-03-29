@@ -13,7 +13,7 @@ import com.github.guilhe.views.SeekBarRangedView
 import com.github.guilhe.views.SeekBarRangedView.SeekBarRangedChangeCallback
 import kotlin.math.roundToInt
 
-open class LayerHolder(v: View, callback: LayerHolderCallback, dragListener: OnStartDragListener) :
+open class LayerHolder(v: View) :
     RecyclerView.ViewHolder(v), IHolder {
     val filePath: TextView
     val exist: ImageView
@@ -38,6 +38,10 @@ open class LayerHolder(v: View, callback: LayerHolderCallback, dragListener: OnS
         reOrder = v.findViewById(R.id.ivReorder)
         delete = v.findViewById(R.id.ivDelete)
 
+        marker.visibility = INVISIBLE
+    }
+
+    override fun bind(callback: LayerHolderCallback, dragListener: OnStartDragListener) {
         enabled.setOnCheckedChangeListener { _, isChecked ->
             callback.onVisibilityChanged(this, isChecked)
         }
@@ -61,8 +65,6 @@ open class LayerHolder(v: View, callback: LayerHolderCallback, dragListener: OnS
             if (event.actionMasked == MotionEvent.ACTION_DOWN) dragListener.onStartSwipe(this)
             false
         }
-
-        marker.visibility = INVISIBLE
     }
 
     override fun unBind() {

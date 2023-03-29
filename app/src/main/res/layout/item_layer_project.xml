@@ -15,6 +15,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="@dimen/text_size"
             android:text="@string/project_name" />
 
         <EditText
@@ -22,6 +23,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:textSize="@dimen/small_text_size"
             android:inputType="text" />
     </LinearLayout>
 
@@ -33,6 +35,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="@dimen/text_size"
             android:text="@string/project_path" />
 
         <EditText
@@ -40,6 +43,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:textSize="@dimen/small_text_size"
             android:inputType="text" />
     </LinearLayout>
 
@@ -51,6 +55,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="@dimen/text_size"
             android:text="@string/project_description" />
 
         <EditText
@@ -59,6 +64,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:inputType="text"
+            android:textSize="@dimen/small_text_size"
             android:lines="2" />
     </LinearLayout>
 

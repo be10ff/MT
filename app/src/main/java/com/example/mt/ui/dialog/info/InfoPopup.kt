@@ -15,7 +15,7 @@ import com.example.mt.map.wkt.DBaseField
 import com.example.mt.map.wkt.WktGeometry
 import com.example.mt.map.wkt.WktPoint
 import kotlinx.android.synthetic.main.dialog_info.view.*
-
+@Deprecated("delete")
 class InfoPopup(val context: Context, geometry: WktGeometry, callback: GeometryCallback) : PopupWindow(context) {
 
     val close : ImageView

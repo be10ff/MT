@@ -3,26 +3,20 @@ package com.example.mt.map.wkt
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.RectF
-import com.example.mt.map.Screen
-import com.example.mt.model.gi.Bounds
-import com.example.mt.model.gi.GILonLat
-import com.example.mt.model.gi.Projection
-import com.example.mt.model.gi.VectorStyle
+import com.example.mt.model.gi.*
 
 data class WktPoint(
-    var point: GILonLat
+    var point: GILonLat,
+    override val attributes: MutableMap<String, DBaseField> = mutableMapOf(),
+    override var selected: Boolean = false,
+    override var marker: Boolean = false
 ) : WktGeometry {
     override val type: WKTGeometryType = WKTGeometryType.POINT
-    override val attributes: MutableMap<String, DBaseField> = mutableMapOf()
     val inMap = Projection.reproject(point, Projection.WorldMercator)
-    override var selected: Boolean = false
-    override var marker: Boolean = false
-
     override fun toWKT(): String = "POINT(${point.lon} ${point.lat})"
 
     override fun draw(canvas: Canvas, bounds: Bounds, scale: Float, style: VectorStyle) {
-        val screen = Screen(canvas, bounds)
-        val screenPoint = screen.toScreen(point)
+        val screenPoint = Project.toScreen(canvas, bounds, point)
         val src = Rect(0, 0, style.image.width, style.image.height)
         val dst = RectF(
             screenPoint.x - scale * style.image.width / 2,
@@ -41,12 +35,12 @@ data class WktPoint(
     override fun paint(canvas: Canvas, bounds: Bounds, style: VectorStyle) {}
 
     fun paintTrack(canvas: Canvas, bounds: Bounds, style: VectorStyle) {
-        val screen = Screen(canvas, bounds)
-        val screeenPoint = screen.toMercatorScreen(inMap).apply {
+        val screenPoint = Project.toScreen(canvas, bounds, inMap)
+        .apply {
             x -= style.image.width / 2
             y -= style.image.height / 2
         }
-        canvas.drawBitmap(style.image, screeenPoint.x, screeenPoint.y, null)
+        canvas.drawBitmap(style.image, screenPoint.x, screenPoint.y, null)
     }
 
     override fun isEmpty(): Boolean = false

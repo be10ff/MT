@@ -15,17 +15,19 @@ class AttributesAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return AttributesHolder(
         LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_attributes_list, parent, false), callback)
+            .inflate(R.layout.item_attributes_list, parent, false))
     }
 
     override fun getItemCount(): Int = attributes.size
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         (holder as AttributesHolder).also{
+            it.unBind()
             attributes[position].let{ attr ->
                 holder.name.setText(attr.name)
                 holder.value.setText(attr.value)
             }
+            it.bind(callback)
         }
     }
 

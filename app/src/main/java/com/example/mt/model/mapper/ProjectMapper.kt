@@ -16,7 +16,9 @@ class ProjectMapper {
             saveAs = from.saveAs,
             description = from.description?.text,
             bounds = with(from.bounds) {
-                Bounds(
+                if(left.isNaN()||left.isInfinite()||right.isNaN()||right.isInfinite()||top.isNaN()||top.isInfinite()||bottom.isNaN()||bottom.isInfinite())
+                    Bounds.InitialState
+                else Bounds(
                     projection = Projection.of(projection),
                     left = left,
                     top = top,
@@ -38,7 +40,7 @@ class ProjectMapper {
 //                            style =  it.style!!,
                             style = VectorStyle.default,
                             editableType = it.editable?.type,
-                            activeEdiable = it.editable?.active,
+                            activeEdiable = it.editable?.active ?: false,
                             isMarkersSource = it.markerSource ?: false
                         )
 
@@ -102,12 +104,10 @@ class ProjectMapper {
                             ),
                             editable = (it as? XMLLayer)?.let { xmlProperties ->
                                 xmlProperties.editableType?.let { type ->
-                                    xmlProperties.activeEdiable?.let { active ->
-                                        GIEditable(
-                                            type = type,
-                                            active = active
-                                        )
-                                    }
+                                    GIEditable(
+                                        type = type,
+                                        active = xmlProperties.activeEdiable
+                                    )
                                 }
 
                             },

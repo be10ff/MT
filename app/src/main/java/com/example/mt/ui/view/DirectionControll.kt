@@ -9,7 +9,6 @@ import android.view.ViewTreeObserver
 import androidx.core.graphics.applyCanvas
 import com.example.mt.R
 import com.example.mt.map.MapUtils
-import com.example.mt.map.Screen
 import com.example.mt.map.wkt.WktPoint
 import com.example.mt.model.ControlState
 import com.example.mt.model.SensorState

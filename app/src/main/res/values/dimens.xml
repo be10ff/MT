@@ -6,6 +6,7 @@
     <dimen name="large_text_size">16sp</dimen>
     <dimen name="caption_text_size">14sp</dimen>
     <dimen name="text_size">12sp</dimen>
+    <dimen name="small_text_size">10sp</dimen>
     <dimen name="editing_poi_size">24dp</dimen>
     <dimen name="text_margin">8dp</dimen>
     <dimen name="block_margin">4dp</dimen>

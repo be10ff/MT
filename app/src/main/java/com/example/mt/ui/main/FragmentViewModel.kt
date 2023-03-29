@@ -21,7 +21,6 @@ import com.example.mt.functional.ErrorHandlerManager
 import com.example.mt.functional.updateFlow
 import com.example.mt.functional.windowed
 import com.example.mt.map.MapUtils
-import com.example.mt.map.Screen
 import com.example.mt.map.layer.Layer
 import com.example.mt.map.layer.SQLLayer
 import com.example.mt.map.layer.XMLLayer
@@ -49,8 +48,6 @@ import java.util.*
 import kotlin.math.hypot
 
 class FragmentViewModel(application: Application) : AndroidViewModel(application) {
-    val dispatchers = AppCoroutineDispatchers()
-    val errorHandlerManager = ErrorHandlerManager()
 
     val locationPermissionStatusFlow = application.permission(
         Manifest.permission.ACCESS_FINE_LOCATION
@@ -59,10 +56,19 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     val manageFilesPermissionStatusFlow = application.managePermission()
 
     private val invalidationState = MutableStateFlow<Boolean>(false)
+    private val _viewRectState: MutableStateFlow<Rect> = MutableStateFlow(Rect())
+
     private val _projectState: MutableStateFlow<Project> = MutableStateFlow(Project.InitialState)
+
     val projectState: StateFlow<Project> = _projectState
+     .combine(_viewRectState){ project, rect ->
+        val correctBounds = project.adjustBoundsRatio(rect)
+         project.copy(screen = rect, bounds = correctBounds)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), Project.InitialState)
+
     val bitmapState: Flow<BitmapState> =
-        _projectState
+        projectState
             .filter { !it.screen.isEmpty }
             .combine(invalidationState){ project, _ ->
                 project
@@ -109,8 +115,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             sensors to project
         }.combine(markerGeometryState){ (sensors, project), selection ->
             ControlState(sensors, project, selection)
-        }
-            .shareIn(viewModelScope, SharingStarted.WhileSubscribed(), 1)
+        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), 1)
 
     val buttonState =
         _commonState.map {
@@ -148,19 +153,6 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
         }.launchIn(viewModelScope)
 
         viewModelScope.launch {
-//            selectedGeometryState
-//                .collect {
-//                    it?.let{ point ->
-//                        val newCenter =
-//                            Screen(_projectState.value.screen, _projectState.value.bounds).toScreen(
-//                                point.point
-//                            )
-//                        val dX = _projectState.value.screen.exactCenterX() - newCenter.x
-//                        val dY = _projectState.value.screen.exactCenterY() - newCenter.y
-////                        moveScreenBy(-dX.toInt(), dY.toInt())
-//                    }
-//
-//            }
             _sensorState.map {
                 it.location
             }
@@ -201,7 +193,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                         location?.let {
                             projectState.value.let { mapState ->
                                 val newCenter =
-                                    Screen(mapState.screen, mapState.bounds).toScreen(
+                                    mapState.toScreen(
                                         GILonLat(location)
                                     )
                                 val dX = mapState.screen.exactCenterX() - newCenter.x
@@ -228,10 +220,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             }
 
             is Action.MapAction.ViewRectChanged -> {
-                _projectState.updateFlow(viewModelScope) {
-                    val correctBounds = it.adjustBoundsRatio(action.rect)
-                    it.copy(screen = action.rect, bounds = correctBounds)
-                }
+                _viewRectState.updateFlow(viewModelScope) { action.rect }
             }
 
             is Action.MapAction.MoveViewBy -> {
@@ -269,6 +258,9 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
 
             is Action.ProjectAction.RemoveLayer -> {
                 _projectState.updateFlow(viewModelScope) {
+                    if(poiLayer == action.layer) poiLayer = null
+                    if(trackLayer == action.layer) handleStopTrack()
+
                     it.copy(layers = it.layers.toMutableList().apply {
                         remove(action.layer)
                     })
@@ -289,7 +281,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 _commonState.filter {
                     it.manageGranted != Status.Bloked
                 }.onEach {
-                    saveProject(_projectState.value)
+                    saveProject(projectState.value)
                 }.launchIn(viewModelScope)
 
             }
@@ -354,7 +346,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                         when (layer) {
                             is XMLLayer -> layer.copy(
                                 //ToDo possible to show many layer's markers
-                                isMarkersSource = (layer != action.layer) || (layer == action.layer && !layer.isMarkersSource),
+                                isMarkersSource = (layer != action.layer) || (layer == action.layer && !layer.isMarkersSource)
                             )
                             else -> layer
                         }
@@ -363,12 +355,14 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             }
 
             is Action.ProjectAction.MarkersSelectionChanged -> {
-                markerGeometryState.value = if (action.point != markerGeometryState.value) {
-                    markerGeometryState.value?.marker = false
-                    action.point.apply { marker = true }
-                } else {
-                    markerGeometryState.value?.marker = false
-                    null
+                markerGeometryState.updateFlow(viewModelScope){
+                    if (action.point != it) {
+                        it?.marker = false
+                        action.point.apply { marker = true }
+                    } else {
+                        it.marker = false
+                        null
+                    }
                 }
                 update()
             }
@@ -381,9 +375,9 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                             val format = SimpleDateFormat("MMM_dd_hh_mm_ss", Locale.ENGLISH)
                             val dateString =
                                 format.format(Date(Calendar.getInstance().timeInMillis))
-                            val nameString = "${_projectState.value.name}_${dateString}.track"
+                            val nameString = "${projectState.value.name}_${dateString}.track"
                             val source =
-                                Environment.getExternalStorageDirectory().absolutePath + File.separator + (_projectState.value.name
+                                Environment.getExternalStorageDirectory().absolutePath + File.separator + (projectState.value.name
                                     ?: "Track") + File.separator + nameString
                             _commonState.updateFlow(viewModelScope) {
                                 it.copy(
@@ -433,21 +427,23 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
             }
 
             is Action.GeometryAction.Delete -> {
-                _projectState.value.layers.filterIsInstance(XMLLayer::class.java)
+                projectState.value.layers.filterIsInstance(XMLLayer::class.java)
                     .map { layer ->
                         layer.geometries.remove(action.geometry)
                     }
-                markerGeometryState.value = null
-                selectedGeometryState.value = null
+                markerGeometryState.updateFlow(viewModelScope){null}
+                selectedGeometryState.updateFlow(viewModelScope){null}
                 update()
             }
             is Action.GeometryAction.SetPoi -> {
-                markerGeometryState.value = if (action.geometry != markerGeometryState.value) {
-                    markerGeometryState.value?.marker = false
-                    action.geometry.apply { marker = true }
-                } else {
-                    markerGeometryState.value?.marker = false
-                    null
+                markerGeometryState.updateFlow(viewModelScope){
+                    if (action.geometry != it) {
+                        it?.marker = false
+                        action.geometry.apply { marker = true }
+                    } else {
+                        it.marker = false
+                        null
+                    }
                 }
                 update()
             }
@@ -525,42 +521,28 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 }
             } else {
 
-                selectedGeometryState.value?.let{it as? WktPoint}?.let { geometry ->
-                    val projectedBounds = _projectState.value.bounds.reproject(geometry.point.projection)
-                    val pixelWidth = projectedBounds.width / _projectState.value.screen.width()
-                    val pixelHeight = projectedBounds.height / _projectState.value.screen.height()
-                    geometry.point =
-                        GILonLat(geometry.point.lon - x * pixelWidth, geometry.point.lat - y * pixelHeight, geometry.point.projection)
+                selectedGeometryState.updateFlow(viewModelScope){
+                    (it as? WktPoint)?.let{ point ->
+                        val projectedBounds = mapState.bounds.reproject(point.point.projection)
+                        val pixelWidth = projectedBounds.width / mapState.screen.width()
+                        val pixelHeight = projectedBounds.height / mapState.screen.height()
 
-                    _projectState.value.layers.filterIsInstance(XMLLayer::class.java)
-                                        .firstOrNull { it.geometries.contains(geometry) }?.save()
-                    update()
+                        val res = point.copy(point =  GILonLat(point.point.lon - x * pixelWidth, point.point.lat - y * pixelHeight, point.point.projection))
+                        mapState.layers.filterIsInstance(XMLLayer::class.java)
+                            .firstOrNull { it.geometries.contains(point) }?.let{ layer ->
+                                layer.geometries.replaceAll { old ->
+                                    if(old == point) {
+                                        res
+                                    }
+                                    else old
+                                }
+                                    update()
+                                    layer.save()
+                                res
+                            }
+                    } ?: run{ it }
                 }
-
-//                _projectState.updateFlow(viewModelScope) { project ->
-//                    project.copy(
-//                        layers = project.layers.map { layer ->
-//                            ((layer as? XMLLayer)?.geometries
-//                                ?.firstOrNull {
-//                                    it.equals(selectedGeometryState.value)
-//                                })
-//                                ?.let{
-//                                    it as? WktPoint
-//                                }?.let{ geometry ->
-//                                    val projectedBounds = project.bounds.reproject(geometry.point.projection)
-//                                    val pixelWidth = projectedBounds.width / project.screen.width()
-//                                    val pixelHeight = projectedBounds.height / project.screen.height()
-//
-//
-//                                    layer.geometries[layer.geometries.indexOf (geometry)] = geometry.copy(point = GILonLat(geometry.point.lon - x * pixelWidth, geometry.point.lat - y * pixelHeight, geometry.point.projection))
-//                                layer
-//                            } ?: layer
-//                        }
-//                    )
-//                }
-
             }
-
         }
     }
 
@@ -574,12 +556,12 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     this.attributes.put("Date", DBaseField("Date", CommonUtils.currentTime()))
                     this.attributes.put(
                         "Project",
-                        DBaseField("Project", _projectState.value.name ?: "Track")
+                        DBaseField("Project", projectState.value.name ?: "Track")
                     )
                 }
             poiLayer?.geometries?.add(poi)
             poiLayer?.save()
-
+            handleChangeSelected(poi)
         }
         update()
     }
@@ -592,9 +574,9 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
         trackLayer?.let { layer ->
             val format = SimpleDateFormat("MMM_dd_mm_ss", Locale.ENGLISH)
             val dateString = format.format(Date(Calendar.getInstance().timeInMillis))
-            val nameString = "${_projectState.value.name}_${dateString}.track"
+            val nameString = "${projectState.value.name}_${dateString}.track"
             val source =
-                Environment.getExternalStorageDirectory().absolutePath + File.separator + (_projectState.value.name
+                Environment.getExternalStorageDirectory().absolutePath + File.separator + (projectState.value.name
                     ?: "Track") + File.separator + nameString
             val output = File(source)
             if (!output.exists()) output.createNewFile()
@@ -603,7 +585,7 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                     this.attributes.put("Date", DBaseField("Date", CommonUtils.currentTime()))
                     this.attributes.put(
                         "Project",
-                        DBaseField("Project", _projectState.value.name ?: "Track")
+                        DBaseField("Project", projectState.value.name ?: "Track")
                     )
                 }
                 .also {
@@ -621,9 +603,9 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun handleClick(point: Point){
-        val slop = _projectState.value.getScreen().touchArea(point, touchSlop)
+        val slop = projectState.value.touchArea(point, touchSlop)
         viewModelScope.launch {
-            _projectState.value.layers
+            projectState.value.layers
                 .filter { it.enabled }
                 .filterIsInstance(XMLLayer::class.java)
                 .map { layer ->
@@ -640,12 +622,14 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun handleChangeSelected(geometry: WktGeometry){
-        selectedGeometryState.value = if (geometry != selectedGeometryState.value) {
-            selectedGeometryState.value?.selected = false
-            geometry.apply { selected = true }
-        } else {
-            selectedGeometryState.value?.selected = false
-            null
+        selectedGeometryState.updateFlow(viewModelScope) {
+            if (geometry != it) {
+                it?.selected = false
+                geometry.apply { selected = true }
+            } else {
+                it.selected = false
+                null
+            }
         }
         update()
     }
@@ -653,9 +637,9 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     private fun handleCreatePoiLayer(name: String? = null): XMLLayer {
         val format = SimpleDateFormat("MMM_dd_yy", Locale.ENGLISH)
         val dateString = format.format(Date(Calendar.getInstance().timeInMillis))
-        val nameString = "${_projectState.value.name}_${dateString}_poi.xml"
+        val nameString = "${projectState.value.name}_${dateString}_poi.xml"
 
-        val layer = Layer.createPoiLayer(_projectState.value.name ?: "Track", nameString)
+        val layer = Layer.createPoiLayer(projectState.value.name ?: "Track", nameString)
             .also {
                 it.save()
             }
@@ -670,9 +654,9 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
     private fun handleCreateTrackLayer(name: String? = null): XMLLayer {
         val format = SimpleDateFormat("MMM_dd_yy", Locale.ENGLISH)
         val dateString = format.format(Date(Calendar.getInstance().timeInMillis))
-        val nameString = "${_projectState.value.name}_${dateString}_track.xml"
+        val nameString = "${projectState.value.name}_${dateString}_track.xml"
 
-        val layer = Layer.createTrackLayer(_projectState.value.name ?: "Track", nameString)
+        val layer = Layer.createTrackLayer(projectState.value.name ?: "Track", nameString)
             .also {
                 it.save()
             }
@@ -703,8 +687,14 @@ class FragmentViewModel(application: Application) : AndroidViewModel(application
                 } else {
                     Project.InitialState
                 })
-                    .also {
-                        _projectState.emit(it)
+                    .also { project ->
+                        project.layers.lastOrNull { (it as? XMLLayer)?.let{ it.isMarkersSource && it.activeEdiable} ?: false }
+                            ?.also {
+                                poiLayer = (it as? XMLLayer)
+                            }
+                        _projectState.updateFlow(viewModelScope){
+                            project
+                        }
                     }
             }
         }

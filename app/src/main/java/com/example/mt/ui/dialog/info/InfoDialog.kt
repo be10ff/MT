@@ -9,7 +9,7 @@ import com.example.mt.R
 import com.example.mt.map.wkt.WktGeometry
 import com.example.mt.ui.dialog.AbstractDialog
 import kotlinx.android.synthetic.main.dialog_info.*
-
+@Deprecated("delete")
 class InfoDialog(val geometry: WktGeometry) : AbstractDialog(R.layout.dialog_info) {
 
     private val callback = object : AttributesCallback{

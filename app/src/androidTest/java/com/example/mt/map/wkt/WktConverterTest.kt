@@ -1,6 +1,7 @@
 package com.example.mt.map.wkt
 
 import com.example.mt.model.gi.GILonLat
+import com.example.mt.model.gi.Projection
 
 import org.junit.Test
 import org.simpleframework.xml.Serializer
@@ -77,7 +78,7 @@ class WktConverterTest {
         }.takeIf {
             it.size == 2
         }?.let {
-            GILonLat(it[0], it[1])
+            GILonLat(it[0], it[1], Projection.WGS84)
         }
 
 
@@ -99,7 +100,7 @@ class WktConverterTest {
                         it.size == 2
                     }
                     ?.let {
-                        GILonLat(it[0], it[1])
+                        GILonLat(it[0], it[1], Projection.WGS84)
                     }
             }
 

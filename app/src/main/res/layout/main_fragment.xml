@@ -104,62 +104,6 @@
             app:fab_icon="@drawable/ic_add" />
     </com.nambimobile.widgets.efab.ExpandableFabLayout>
 
-<!--        <com.nambimobile.widgets.efab.ExpandableFabLayout-->
-<!--            android:id="@+id/eflEdit"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent">-->
-
-<!--            <com.nambimobile.widgets.efab.ExpandableFab-->
-<!--                android:id="@+id/fabEdit"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_gravity="bottom|end"-->
-<!--                android:layout_margin="@dimen/btn_margin"-->
-<!--                app:efab_closingAnticipateTension="0"-->
-<!--                app:efab_color="@color/active_control"-->
-<!--                app:efab_fabOptionPosition="above"-->
-<!--                app:efab_icon="@drawable/ic_edit"-->
-<!--                app:efab_iconAnimationRotationDeg="90" />-->
-
-<!--            <com.nambimobile.widgets.efab.FabOption-->
-<!--                android:id="@+id/btnEdit"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                app:fab_color="@color/active_control"-->
-<!--                app:fab_icon="@drawable/ic_edit" />-->
-
-<!--            <com.nambimobile.widgets.efab.FabOption-->
-<!--                android:id="@+id/btnDelete"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                app:fab_color="@color/active_control"-->
-<!--                app:fab_icon="@drawable/ic_delete" />-->
-
-<!--            <com.nambimobile.widgets.efab.FabOption-->
-<!--                android:id="@+id/btnAttributes"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                app:fab_color="@color/active_control"-->
-<!--                app:fab_icon="@drawable/ic_properties" />-->
-
-<!--            <com.nambimobile.widgets.efab.FabOption-->
-<!--                android:id="@+id/btnAddPoints"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                app:fab_color="@color/active_control"-->
-<!--                app:fab_icon="@drawable/ic_add_points" />-->
-
-<!--            <com.nambimobile.widgets.efab.FabOption-->
-<!--                android:id="@+id/btnClose"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                app:fab_color="@color/active_control"-->
-<!--                app:fab_icon="@drawable/ic_close" />-->
-
-<!--        </com.nambimobile.widgets.efab.ExpandableFabLayout>-->
-
-<!--    </com.nambimobile.widgets.efab.ExpandableFabLayout>-->
-
     <com.nambimobile.widgets.efab.ExpandableFabLayout
         android:id="@+id/eflCompass"
         android:layout_width="match_parent"
@@ -206,6 +150,16 @@
             app:fab_icon="@drawable/ic_folder_open" />
 
     </com.nambimobile.widgets.efab.ExpandableFabLayout>
+
+    <com.example.mt.ui.dialog.info.InfoView
+        android:id="@+id/vInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"/>
+
+<!--    <include layout="@layout/dialog_info"/>-->
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

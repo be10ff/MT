@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Environment
 import android.os.Looper
+import android.util.Log
 import android.view.Surface
 import android.view.WindowManager
 import androidx.core.app.ActivityCompat
@@ -81,7 +82,7 @@ fun Application.locationListener(): Flow<Location> = callbackFlow {
 fun Application.sensorListener(): Flow<FloatArray> = callbackFlow {
 
     val magnitometerReading = FloatArray(3)
-    val accelerometermeterReading = FloatArray(3)
+    val accelerometerReading = FloatArray(3)
 
     val rotationMatrix = FloatArray(9)
     val outRotationMatrix = FloatArray(9)
@@ -101,19 +102,22 @@ fun Application.sensorListener(): Flow<FloatArray> = callbackFlow {
                     System.arraycopy(
                         p0.values,
                         0,
-                        accelerometermeterReading,
+                        accelerometerReading,
                         0,
-                        accelerometermeterReading.size
+                        accelerometerReading.size
                     )
                 }
             }
 
+//            Log.i("orientationAngles", Math.toDegrees(accelerometerReading[0].toDouble()).toString() + "  " + Math.toDegrees(accelerometerReading[1].toDouble()).toString() + "  " + Math.toDegrees(accelerometerReading[2].toDouble()).toString()   )
+
             SensorManager.getRotationMatrix(
                 rotationMatrix,
                 null,
-                accelerometermeterReading,
+                accelerometerReading,
                 magnitometerReading
             )
+
             val rotation: Int = (getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.rotation
             var x_axis = SensorManager.AXIS_X
             var y_axis = SensorManager.AXIS_Y
@@ -134,7 +138,10 @@ fun Application.sensorListener(): Flow<FloatArray> = callbackFlow {
             }
             SensorManager.remapCoordinateSystem(rotationMatrix, x_axis, y_axis, outRotationMatrix)
             SensorManager.getOrientation(outRotationMatrix, orientationAngles)
-
+//            SensorManager.getOrientation(rotationMatrix, orientationAngles)
+//            orientationAngles.also{
+//                Log.i("orientationAngles", Math.toDegrees(it[0].toDouble()).toString() + "  " + Math.toDegrees(it[1].toDouble()).toString() + "  " + Math.toDegrees(it[2].toDouble()).toString()   )
+//            }
             trySend(orientationAngles)
         }
 
@@ -145,8 +152,8 @@ fun Application.sensorListener(): Flow<FloatArray> = callbackFlow {
     val magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
     val accelerometrSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-    sensorManager.registerListener(listener, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI)
-    sensorManager.registerListener(listener, accelerometrSensor, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI)
+    sensorManager.registerListener(listener, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_NORMAL)
+    sensorManager.registerListener(listener, accelerometrSensor, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_NORMAL)
 
     awaitClose {
         sensorManager.unregisterListener(listener)

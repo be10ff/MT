@@ -3,12 +3,12 @@ package com.example.mt.map.renderer
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Rect
-import com.example.mt.map.Screen
 import com.example.mt.map.layer.Layer
 import com.example.mt.map.tile.GISQLYandexTile
 import com.example.mt.map.tile.GITile
 import com.example.mt.map.tile.GIYandexTrafficTile
 import com.example.mt.model.gi.Bounds
+import com.example.mt.model.gi.Project
 import com.example.mt.model.xml.SqlProjection
 import java.net.HttpURLConnection
 import java.net.URL
@@ -31,7 +31,6 @@ object GIOnlineRenderer : GIRenderer() {
         val kf: Double = 360.0 / (GITile.tilePx)
         val dz = ln(widthPx * kf / bounds.width) / ln(2.0)
         val z = dz.roundToInt()
-        val screen = Screen(rect, bounds)
         val leftTop =
             GITile.create(z, bounds.left, bounds.top, SqlProjection.YANDEX)
         val rightBottom =
@@ -55,7 +54,7 @@ object GIOnlineRenderer : GIRenderer() {
                     connection.disconnect()
                     bitTile?.let {
                         val src = Rect(0, 0, bitTile.width, bitTile.width)
-                        val dst = screen.toScreen(tile.bounds)
+                        val dst = Project.toScreen(rect, bounds,tile.bounds)
                         canvas.drawBitmap(bitTile, src, dst, null)
                     }
                 } catch (e: Exception) {

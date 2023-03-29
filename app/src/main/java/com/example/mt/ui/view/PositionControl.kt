@@ -41,7 +41,7 @@ class PositionControl constructor(
         state.sensorState.location?.let {
             currentPosition = GILonLat(it)
             currentPosition?.let {
-                state.project.mapToScreen(it)
+                state.project.toScreen(it)
             }?.let { point ->
                 x = (point.x - image.height / 2).toFloat()
                 y = (point.y - image.width / 2).toFloat()

@@ -7,7 +7,7 @@ import com.example.mt.R
 import com.example.mt.ui.dialog.IHolder
 import com.example.mt.ui.view.onChange
 
-class ProjectHolder(val v: View, callback: LayerHolderCallback) : RecyclerView.ViewHolder(v),
+class ProjectHolder(v: View) : RecyclerView.ViewHolder(v),
     IHolder {
     val projectPath: EditText
     val projectName: EditText
@@ -17,12 +17,13 @@ class ProjectHolder(val v: View, callback: LayerHolderCallback) : RecyclerView.V
         projectPath = v.findViewById(R.id.etProjectPath)
         projectName = v.findViewById(R.id.etProjectName)
         description = v.findViewById(R.id.etProjectDescription)
+    }
 
+    override fun bind(callback: LayerHolderCallback, dragListener: OnStartDragListener) {
         projectName.onChange { callback.onProjectName(it) }
         projectPath.onChange { callback.onProjectPath(it) }
         description.onChange { callback.onProjectDescription(it) }
     }
-
 
 
     override fun unBind() {

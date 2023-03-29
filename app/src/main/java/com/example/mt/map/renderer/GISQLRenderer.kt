@@ -4,11 +4,11 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Rect
 import com.example.mt.map.MapUtils
-import com.example.mt.map.Screen
 import com.example.mt.map.layer.Layer
 import com.example.mt.map.layer.SQLLayer
 import com.example.mt.map.tile.GITile
 import com.example.mt.model.gi.Bounds
+import com.example.mt.model.gi.Project
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
@@ -33,7 +33,6 @@ object GISQLRenderer : GIRenderer() {
 
                     val zoom = dz.roundToInt()
                     val z: Int = properties.getLevel(zoom)
-                    val screen = Screen(rect, bounds)
                     val minScale = MapUtils.scale2z(sqlLayer.rangeTo ?: 0)
                     val maxScale = MapUtils.scale2z(sqlLayer.rangeFrom ?: 0)
 
@@ -66,7 +65,7 @@ object GISQLRenderer : GIRenderer() {
                                             val y = cursor.getInt(2)
                                             val tile = GITile.create(x, y, z, layer.sqlProjection)
                                             src.set(0, 0, bitTile.width, bitTile.width)
-                                            val dst = screen.toScreen(tile.bounds)
+                                            val dst = Project.toScreen(rect, bounds,tile.bounds)
                                             canvas.drawBitmap(bitTile, src, dst, null)
                                         }
                                         cursor.close()

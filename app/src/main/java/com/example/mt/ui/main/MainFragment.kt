@@ -7,23 +7,24 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.os.Bundle
 import android.os.Environment
-import android.view.Gravity
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.graphics.toRegion
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.mt.MainActivity
 import com.example.mt.R
+import com.example.mt.map.wkt.WktGeometry
 import com.example.mt.map.wkt.WktPoint
 import com.example.mt.model.Action
 import com.example.mt.model.BitmapState
 import com.example.mt.model.Status
 import com.example.mt.model.TrackState
-import com.example.mt.ui.dialog.info.GeometryCallback
-import com.example.mt.ui.dialog.info.InfoPopup
+import com.example.mt.ui.dialog.info.GeometryInfoCallback
 import com.example.mt.ui.dialog.markers.MarkersDialog
 import com.example.mt.ui.dialog.settings.SettingsDialog
 import com.example.mt.ui.view.ControlListener
@@ -42,7 +43,6 @@ class MainFragment : Fragment(), ControlListener {
 
     private val fragmentViewModel: FragmentViewModel by activityViewModels()
     private var positionControl: PositionControl? = null
-    private var infoPopUp: InfoPopup? = null
 
     private val startForResultProject =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -107,66 +107,6 @@ class MainFragment : Fragment(), ControlListener {
                 }.collect()
         }
 
-        fragmentViewModel.selectedGeometryState
-            .onEach {  geometry ->
-                geometry?.let {
-                    if (geometry.selected)
-                        when {
-                            else -> {
-                                activity?.let {
-                                    InfoPopup(it, geometry, object : GeometryCallback {
-
-                                        override fun onEdit() {
-                                            (geometry as? WktPoint)?.let{
-                                                fragmentViewModel.submitAction(
-                                                    Action.GeometryAction.Edit(
-                                                        geometry
-                                                    )
-                                                )
-                                            }
-                                        }
-
-                                        override fun onDelete() {
-                                            fragmentViewModel.submitAction(
-                                                Action.GeometryAction.Delete(
-                                                    geometry
-                                                )
-                                            )
-                                        }
-
-                                        override fun onSetPoi() {
-                                            (geometry as? WktPoint)?.let{
-                                            fragmentViewModel.submitAction(
-                                                Action.GeometryAction.SetPoi(
-                                                    geometry
-                                                    )
-                                                )
-
-                                            }
-                                        }
-
-                                        override fun onClose() {
-                                            (geometry as? WktPoint)?.let{
-                                                fragmentViewModel.submitAction(
-                                                    Action.GeometryAction.ChangeSelected(
-                                                        geometry
-                                                    )
-                                                )
-
-                                            }
-                                        }
-                                    })
-                                        .also{
-                                            infoPopUp = it
-                                        }
-                                        .showAtLocation(main, Gravity.TOP, 0, 0)
-                                }
-                            }
-                        }
-                } ?: run { /*infoPopUp?.dismiss()*/ }
-            }
-            .launchIn(lifecycleScope)
-
         fragmentViewModel.buttonState
             .map { it.writeTrack }
             .onEach { state ->
@@ -184,14 +124,17 @@ class MainFragment : Fragment(), ControlListener {
         fragmentViewModel.buttonState
             .map { it.editGeometry }
             .onEach { state ->
-                infoPopUp?.edit?.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_edit)
+                vInfo.edit.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_edit)
             }
             .launchIn(lifecycleScope)
-        fragmentViewModel.selectedGeometryState
+        fragmentViewModel.markerGeometryState
             .onEach {
-                (it as? WktPoint)?.let{
-                    infoPopUp?.lonLat?.text = it.point.toString()
-                }
+                vInfo.poi.setImageResource(if (it?.marker ?: false) R.drawable.ic_close else R.drawable.ic_poi)
+            }.launchIn(lifecycleScope)
+
+        fragmentViewModel.selectedGeometryState
+            .onEach { geometry ->
+                vInfo.consume(geometry)
             }.launchIn(lifecycleScope)
 
         lifecycleScope.launch {
@@ -199,8 +142,8 @@ class MainFragment : Fragment(), ControlListener {
                 .collectLatest { state ->
                     positionControl?.consume(state)
                     control_scale.consume(state)
-//                    cDirection.consume(state)
-//                    cCompass.consume(state)
+                    cDirection.consume(state)
+                    cCompass.consume(state)
                 }
         }
     }
@@ -220,7 +163,47 @@ class MainFragment : Fragment(), ControlListener {
             )
         }
 
+        vInfo.callback = object: GeometryInfoCallback {
+            override fun onEdit(geometry: WktGeometry?) {
+                (geometry as? WktPoint)?.let{
+                    fragmentViewModel.submitAction(
+                        Action.GeometryAction.Edit(
+                            geometry
+                        )
+                    )
+                }
+            }
 
+            override fun onDelete(geometry: WktGeometry?) {
+                fragmentViewModel.submitAction(
+                    Action.GeometryAction.Delete(
+                        geometry
+                    )
+                )
+            }
+
+            override fun onSetPoi(geometry: WktGeometry?) {
+                (geometry as? WktPoint)?.let{
+                fragmentViewModel.submitAction(
+                    Action.GeometryAction.SetPoi(
+                        geometry
+                        )
+                    )
+
+                }
+            }
+
+            override fun onClose(geometry: WktGeometry?) {
+                (geometry as? WktPoint)?.let{
+                    fragmentViewModel.submitAction(
+                        Action.GeometryAction.ChangeSelected(
+                            geometry
+                        )
+                    )
+
+                }
+            }
+        }
         setupButtons()
     }
 

@@ -42,7 +42,7 @@ sealed class Action {
     }
 
     sealed class GeometryAction: Action(){
-        data class Delete(val geometry: WktGeometry) : GeometryAction()
+        data class Delete(val geometry: WktGeometry?) : GeometryAction()
         data class Edit(val geometry: WktPoint) : GeometryAction()
         //ToDo same as  MarkersSelectionChanged(val point: WktPoint) : Action()
         data class SetPoi(val geometry: WktPoint) : GeometryAction()

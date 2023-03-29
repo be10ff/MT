@@ -14,6 +14,7 @@ import com.example.mt.map.layer.XMLLayer
 import com.example.mt.model.gi.Project
 import com.example.mt.model.xml.GILayerType
 import com.example.mt.model.xml.SqlProjection
+import com.example.mt.ui.dialog.IHolder
 import java.io.File
 
 class SettingsAdapter(
@@ -28,29 +29,25 @@ class SettingsAdapter(
         return when (viewType) {
             TYPE_SQL -> SQLLayerHolder(
                 LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_sqllayer_list, parent, false), callback, dragListener
-            )
+                    .inflate(R.layout.item_sqllayer_list, parent, false))
             TYPE_XML -> XMLLayerHolder(
                 LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_xmllayer_list, parent, false), callback, dragListener
-            )
+                    .inflate(R.layout.item_xmllayer_list, parent, false))
             TYPE_DEFAULT -> LayerHolder(
                 LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_layer_list, parent, false), callback, dragListener
-            )
+                    .inflate(R.layout.item_layer_list, parent, false))
             TYPE_GROUP -> ProjectHolder(
                 LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_layer_project, parent, false), callback
-            )
+                    .inflate(R.layout.item_layer_project, parent, false))
             else -> LayerHolder(
                 LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_layer_list, parent, false), callback, dragListener
-            )
+                    .inflate(R.layout.item_layer_list, parent, false))
         }
 
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        (holder as? IHolder)?.unBind()
         if (getItemViewType(position) == TYPE_GROUP) {
             with(holder as ProjectHolder) {
                 projectName.setText(project?.name)
@@ -70,7 +67,7 @@ class SettingsAdapter(
                     range.selectedMaxValue = (max.toFloat())
                     rangeMin.text = min.toString()
                     rangeMax.text = max.toString()
-                marker.visibility= View.INVISIBLE
+                    marker.visibility= View.INVISIBLE
                 }
             }
             (holder as? SQLLayerHolder)?.let { sqlHolder ->
@@ -86,6 +83,7 @@ class SettingsAdapter(
                 }
             }
         }
+        (holder as? IHolder)?.bind(callback, dragListener)
     }
 
     override fun getItemCount(): Int = layers.size

@@ -10,15 +10,10 @@ import com.example.mt.R
 import com.example.mt.map.layer.XMLLayer
 import com.example.mt.map.wkt.WktPoint
 import com.example.mt.model.Action
-import com.example.mt.model.gi.Project
 import com.example.mt.model.xml.EditableType
 import com.example.mt.ui.dialog.AbstractDialog
-import com.example.mt.ui.dialog.settings.SettingsAdapter
 import kotlinx.android.synthetic.main.dialog_markers.*
-import kotlinx.android.synthetic.main.dialog_settings.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
