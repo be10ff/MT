@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.example.mt.databinding.MainActivityBinding
 import com.example.mt.model.Action
 import com.example.mt.model.PermissionStatus
 import com.example.mt.model.Status
@@ -37,6 +38,8 @@ class MainActivity : AppCompatActivity() {
 
     private var lastExitAttemptTime = 0L
 
+    private lateinit var binding: MainActivityBinding
+
     override fun onBackPressed() {
         if((System.currentTimeMillis() - lastExitAttemptTime) < 500 ) super.onBackPressed() else lastExitAttemptTime = System.currentTimeMillis()
     }
@@ -44,7 +47,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        setContentView(R.layout.main_activity)
+        binding = MainActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.container, MainFragment.newInstance())

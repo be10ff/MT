@@ -128,12 +128,12 @@
             app:fab_color="@color/active_control"
             app:fab_icon="@drawable/ic_poi" />
 
-        <com.nambimobile.widgets.efab.FabOption
-            android:id="@+id/btnOpenEdit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:fab_color="@color/active_control"
-            app:fab_icon="@drawable/ic_edit" />
+<!--        <com.nambimobile.widgets.efab.FabOption-->
+<!--            android:id="@+id/btnOpenEdit"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            app:fab_color="@color/active_control"-->
+<!--            app:fab_icon="@drawable/ic_edit" />-->
 
         <com.nambimobile.widgets.efab.FabOption
             android:id="@+id/btnOptions"
@@ -156,8 +156,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:visibility="gone"/>
+        app:layout_constraintStart_toStartOf="parent"/>
 
 <!--    <include layout="@layout/dialog_info"/>-->
 

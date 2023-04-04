@@ -8,7 +8,7 @@ class LonLatFormatTest {
     var sec : Number = 0
     @Test
     fun getDegrees() {
-        var res = LonLatFormat.DD_dddd(55.99999999f)
+        var res = LonLatFormat.DD_dddd(55.99999999)
 
         deg = res._degrees
         min = res._minutes
@@ -36,7 +36,7 @@ class LonLatFormatTest {
     }
     @Test
     fun getMin() {
-        var res = LonLatFormat.DD_MMmm(55.99999999f)
+        var res = LonLatFormat.DD_MMmm(55.99999999)
 
         deg = res._degrees
         min = res._minutes
@@ -65,7 +65,7 @@ class LonLatFormatTest {
 
     @Test
     fun getSec() {
-        var res = LonLatFormat.DD_MM_SSss(55.99999999f)
+        var res = LonLatFormat.DD_MM_SSss(55.99999999)
 
         deg = res._degrees
         min = res._minutes
@@ -105,7 +105,7 @@ class LonLatFormatTest {
 
     @Test
     fun getdms() {
-        var res = LonLatFormat.DD_dddd(55.5050f)
+        var res = LonLatFormat.DD_dddd(55.5050)
 
         deg = res.getDegrees()
         min = res.getMinutes()
@@ -135,7 +135,7 @@ class LonLatFormatTest {
 
 
 
-        val res10 = LonLatFormat.DD_MM_SSss(0f)
+        val res10 = LonLatFormat.DD_MM_SSss(0.0)
         res10.setDegrees(10)
         res10.setMinutes(20)
         res10.setSeconds(30)

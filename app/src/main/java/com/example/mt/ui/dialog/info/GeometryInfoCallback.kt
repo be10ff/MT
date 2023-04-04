@@ -8,4 +8,7 @@ interface GeometryInfoCallback {
     fun onDelete(geometry: WktGeometry?)
     fun onSetPoi(geometry: WktGeometry?)
     fun onClose(geometry: WktGeometry?)
+    fun onAdd()
+
+    fun onUpdate()
 }

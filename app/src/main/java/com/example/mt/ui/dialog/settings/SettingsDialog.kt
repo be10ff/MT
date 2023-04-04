@@ -5,6 +5,9 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -12,18 +15,22 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.mt.MainActivity
 import com.example.mt.R
+import com.example.mt.databinding.DialogSettingsBinding
 import com.example.mt.map.MapUtils
 import com.example.mt.map.layer.XMLLayer
 import com.example.mt.model.Action
 import com.example.mt.model.xml.EditableType
 import com.example.mt.model.xml.SqlProjection
 import com.example.mt.ui.dialog.AbstractDialog
-import kotlinx.android.synthetic.main.dialog_settings.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragListener {
+class SettingsDialog : AbstractDialog(/*R.layout.dialog_settings*/), OnStartDragListener {
+
+    var _binding: DialogSettingsBinding? = null
+    val binding get() = _binding!!
+
     private val startForResultProject =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -112,13 +119,26 @@ class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragList
         setStyle(STYLE_NO_TITLE, R.style.FullScreenDialgStyle)
     }
 
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = DialogSettingsBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
     override fun setupObserve() {
         lifecycleScope.launch {
             fragmentViewModel.projectState
                 .collect { project ->
-                    (rvLayers.adapter as? SettingsAdapter)?.let {
+                    (binding.rvLayers.adapter as? SettingsAdapter)?.let {
                         it.setData(project)
-                        rvLayers.post {
+                        binding.rvLayers.post {
                             it.notifyDataSetChanged()
                         }
                     }
@@ -128,11 +148,11 @@ class SettingsDialog : AbstractDialog(R.layout.dialog_settings), OnStartDragList
 
     override fun setupGUI(savedInstanceState: Bundle?) {
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        rvLayers.layoutManager = LinearLayoutManager(requireContext())
-        rvLayers.adapter = adapter
-        helper.attachToRecyclerView(rvLayers)
+        binding.rvLayers.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvLayers.adapter = adapter
+        helper.attachToRecyclerView(binding.rvLayers)
 
-        fabAddLayer.setOnClickListener {
+        binding.fabAddLayer.setOnClickListener {
             val intent = Intent(Intent.ACTION_GET_CONTENT)
                 .apply {
                     type = "file/*"

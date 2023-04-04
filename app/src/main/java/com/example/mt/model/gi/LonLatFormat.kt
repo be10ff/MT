@@ -1,54 +1,60 @@
 package com.example.mt.model.gi
 
-import kotlin.math.roundToInt
-
 sealed class LonLatFormat(
-    open var internal: Float = 0f,
+    open protected var _internal: Double = 0.0,
     ) {
     abstract val _degrees: Number
     abstract val _minutes: Number
     abstract val _seconds: Number
 
     abstract fun getDegrees() : Number
-    abstract fun setDegrees(value: Number)
+    abstract fun setDegrees(value: Number) : Number
     abstract fun getMinutes() : Number
-    abstract fun setMinutes(value: Number)
+    abstract fun setMinutes(value: Number) : Number
     abstract fun getSeconds() : Number
-    abstract fun setSeconds(value: Number)
+    abstract fun setSeconds(value: Number) : Number
+    abstract fun reset(value: Double)
+
+    var internal: Double
+    get() = _internal
+    set(value) {
+        reset(value)
+    }
 
     val k = 100/60
     override fun toString(): String {
         return "$_degrees  $_minutes  $_seconds"
     }
 
-    data class DD_dddd(override var internal: Float) :LonLatFormat(internal) {
-        override var _degrees: Float = 0f
+    data class DD_dddd(override var _internal: Double) :LonLatFormat(_internal) {
+        override var _degrees: Double = 0.0
         override var _minutes: Int = 0
         override var _seconds: Int = 0
         init{
-            set(internal)
+            reset(_internal)
         }
-        fun set(value: Float){
-            internal = value
-            _degrees = internal
+        override fun reset(value: Double){
+            _internal = value
+            _degrees = _internal
             _minutes = 0
             _seconds = 0
         }
 
-        override fun getDegrees(): Float = internal
+        override fun getDegrees(): Double = _internal
 
-        override fun setDegrees(value: Number) {
-            _degrees = value.toFloat()
-            internal = value.toFloat()
+        override fun setDegrees(value: Number) : Number {
+            _degrees = value.toDouble()
+            _internal = value.toDouble()
+            return _internal
         }
 
         override fun getMinutes(): Int = 0
 
-        override fun setMinutes(value: Number) { }
+        override fun setMinutes(value: Number) = _internal
 
         override fun getSeconds(): Int = 0
 
-        override fun setSeconds(value: Number) {}
+        override fun setSeconds(value: Number) = _internal
 
         override fun toString(): String {
 //            return "$_degrees°"
@@ -56,26 +62,27 @@ sealed class LonLatFormat(
         }
     }
 
-    data class DD_MMmm(override var internal: Float) :LonLatFormat(internal) {
+    data class DD_MMmm(override var _internal: Double) :LonLatFormat(_internal) {
         override var _degrees: Int = 0
-        override var _minutes:Float = 0f
+        override var _minutes: Double = 0.0
         override var _seconds: Int = 0
         init{
-            set(internal)
+            reset(_internal)
         }
 
-        fun set(value: Float){
-            internal = value
-            _degrees = internal.toInt()
-            _minutes = ((internal - _degrees)*60)
+        override fun reset(value: Double){
+            _internal = value
+            _degrees = _internal.toInt()
+            _minutes = ((_internal - _internal.toInt())*60)
             _seconds = 0
         }
         override fun getDegrees(): Number {
-            return internal.toInt()
+            return _internal.toInt()
         }
 
-        override fun setDegrees(value: Number) {
-            internal = value.toInt() + _minutes/60f
+        override fun setDegrees(value: Number) : Number{
+            _internal = value.toInt() + _minutes/60f
+            return _internal
         }
 
         override fun getMinutes(): Number {
@@ -83,14 +90,15 @@ sealed class LonLatFormat(
             return _minutes
         }
 
-        override fun setMinutes(value: Number) {
-            _minutes = value.toFloat()
-            internal = _degrees + value.toFloat()/60f
+        override fun setMinutes(value: Number) : Number {
+            _minutes = value.toDouble()
+            _internal = _degrees + value.toDouble()/60f
+            return _internal
         }
 
         override fun getSeconds(): Number = 0
 
-        override fun setSeconds(value: Number) {}
+        override fun setSeconds(value: Number) = 0
 
         override fun toString(): String {
 //            return "$_degrees° $_minutes'"
@@ -98,20 +106,20 @@ sealed class LonLatFormat(
         }
     }
 
-    data class DD_MM_SSss(override var internal: Float) :LonLatFormat(internal) {
+    data class DD_MM_SSss(override var _internal: Double) :LonLatFormat(_internal) {
 
         override var _degrees: Int = 0
         override var _minutes:Int = 0
-        override var _seconds: Float = 0f
+        override var _seconds: Double = 0.0
         init{
-            set(internal)
+            reset(_internal)
         }
 
-        fun set(value: Float){
-            internal = value
-            _degrees = internal.toInt()
-            _minutes = ((internal - _degrees)*60).toInt()
-            _seconds = ((internal - _degrees)*60 - _minutes)*60
+        override fun reset(value: Double){
+            _internal = value
+            _degrees = _internal.toInt()
+            _minutes = ((_internal - _internal.toInt())*60).toInt()
+            _seconds = ((_internal - _internal.toInt())*60 - ((_internal - _internal.toInt())*60).toInt())*60
         }
 
         override fun getDegrees(): Number {
@@ -119,9 +127,10 @@ sealed class LonLatFormat(
             return _degrees
         }
 
-        override fun setDegrees(value: Number) {
+        override fun setDegrees(value: Number): Number {
             _degrees = value.toInt()
-            internal = value.toInt() + _minutes/60f +  _seconds/3600f
+            _internal = value.toInt() + _minutes/60f +  _seconds/3600f
+            return _internal
         }
 
         override fun getMinutes(): Number {
@@ -129,9 +138,10 @@ sealed class LonLatFormat(
             return _minutes
         }
 
-        override fun setMinutes(value: Number) {
+        override fun setMinutes(value: Number): Number {
             _minutes = value.toInt()
-            internal = _degrees + value.toInt()/60f +  _seconds/3600f
+            _internal = _degrees + value.toInt()/60f +  _seconds/3600f
+            return _internal
         }
 
         override fun getSeconds(): Number {
@@ -139,9 +149,10 @@ sealed class LonLatFormat(
             return _seconds
         }
 
-        override fun setSeconds(value: Number) {
-            _seconds = value.toFloat()
-            internal = _degrees + _minutes/60f + value.toFloat()/3600f
+        override fun setSeconds(value: Number) : Number {
+            _seconds = value.toDouble()
+            _internal = _degrees + _minutes/60f + value.toDouble()/3600f
+            return _internal
         }
 
         override fun toString(): String {

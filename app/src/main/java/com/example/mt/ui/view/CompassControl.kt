@@ -16,7 +16,6 @@ import com.example.mt.model.SensorState
 import com.example.mt.model.gi.GILonLat
 import com.example.mt.model.gi.Project
 import com.example.mt.model.gi.Projection
-import kotlinx.android.synthetic.main.control_scale.view.*
 
 class CompassControl constructor(
     context: Context,

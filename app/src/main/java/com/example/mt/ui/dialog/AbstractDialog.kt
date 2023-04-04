@@ -14,19 +14,21 @@ import com.example.mt.R
 import com.example.mt.ui.main.FragmentViewModel
 
 abstract class AbstractDialog(
-    protected val layoutId: Int = 0
+//    protected val layoutId: Int = 0
 ) : DialogFragment() {
+
+//    abstract var binding: Any?
 
     val fragmentViewModel: FragmentViewModel by activityViewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-//        dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        return layoutId.takeIf { it != 0 }?.let { inflater.inflate(it, container) }
-    }
+//    override fun onCreateView(
+//        inflater: LayoutInflater,
+//        container: ViewGroup?,
+//        savedInstanceState: Bundle?
+//    ): View? {
+////        dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+//        return layoutId.takeIf { it != 0 }?.let { inflater.inflate(it, container) }
+//    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -39,6 +41,11 @@ abstract class AbstractDialog(
             .apply {
                 window?.requestFeature(Window.FEATURE_NO_TITLE)
             }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+//        binding = null
     }
 
     abstract fun setupObserve()

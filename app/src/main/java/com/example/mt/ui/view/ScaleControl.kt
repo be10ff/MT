@@ -12,7 +12,6 @@ import com.example.mt.model.SensorState
 import com.example.mt.model.gi.GILonLat
 import com.example.mt.model.gi.GILonLat.Companion.coordString
 import com.example.mt.model.gi.Project
-import kotlinx.android.synthetic.main.control_scale.view.*
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -57,14 +56,15 @@ class ScaleControl @JvmOverloads constructor(
             text = view.findViewById(R.id.tvScale)
             lon = view.findViewById(R.id.tvLon)
             lat = view.findViewById(R.id.tvLat)
+//            scale = view.findViewById(R.id.tvScale)
         }
     }
 
     override fun consume(state: ControlState) {
         state.sensorState.location?.let {
             GILonLat(it).also {
-                tvLon.text = coordString(it).first
-                tvLat.text = coordString(it).second
+                lon.text = coordString(it).first
+                lat.text = coordString(it).second
             }
 
         }
@@ -74,7 +74,7 @@ class ScaleControl @JvmOverloads constructor(
         }?.also { nearest ->
             text.layoutParams.width = (nearest / state.project.metersInPixel).roundToInt()
 
-            tvScale.text = when{
+            text.text = when{
                 nearest <= 1000 -> {"$nearest m"}
                 nearest > 1000 && nearest < 1000000 -> {"${nearest / 1000} km"}
                 else -> {"${nearest / 1000000}K km"}

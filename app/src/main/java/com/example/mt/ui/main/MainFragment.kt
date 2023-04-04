@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.graphics.toRegion
 import androidx.fragment.app.Fragment
@@ -18,6 +19,8 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.mt.MainActivity
 import com.example.mt.R
+import com.example.mt.databinding.MainActivityBinding
+import com.example.mt.databinding.MainFragmentBinding
 import com.example.mt.map.wkt.WktGeometry
 import com.example.mt.map.wkt.WktPoint
 import com.example.mt.model.Action
@@ -26,23 +29,33 @@ import com.example.mt.model.Status
 import com.example.mt.model.TrackState
 import com.example.mt.ui.dialog.info.GeometryInfoCallback
 import com.example.mt.ui.dialog.markers.MarkersDialog
+import com.example.mt.ui.dialog.resettings.ExpandableDialog
 import com.example.mt.ui.dialog.settings.SettingsDialog
 import com.example.mt.ui.view.ControlListener
 import com.example.mt.ui.view.PositionControl
-import kotlinx.android.synthetic.main.main_fragment.*
-import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.coroutines.CoroutineContext
 
 class MainFragment : Fragment(), ControlListener {
 
     companion object {
         fun newInstance() = MainFragment()
     }
+    private var _binding: MainFragmentBinding? = null
+    private val binding get() = _binding!!
 
     private val fragmentViewModel: FragmentViewModel by activityViewModels()
     private var positionControl: PositionControl? = null
+
+    private    object backPressedCallback: OnBackPressedCallback(true){
+        override fun handleOnBackPressed() {
+            TODO("Not yet implemented")
+        }
+
+    }
+
 
     private val startForResultProject =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -67,7 +80,9 @@ class MainFragment : Fragment(), ControlListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        return inflater.inflate(R.layout.main_fragment, container, false)
+        _binding = MainFragmentBinding.inflate(inflater, container, false)
+        return binding.root
+//        return inflater.inflate(R.layout.main_fragment, container, false)
     }
 
     @InternalCoroutinesApi
@@ -77,7 +92,7 @@ class MainFragment : Fragment(), ControlListener {
         setupGUI()
         positionControl = PositionControl(requireContext())
             .also{
-                main.addView(it)
+                binding.main.addView(it)
             }
     }
 
@@ -103,54 +118,57 @@ class MainFragment : Fragment(), ControlListener {
             fragmentViewModel.bitmapState
                 .filterIsInstance<BitmapState.Defined>()
                 .onEach {
-                    map.reDraw(it.bitmap)
+                    binding.map.reDraw(it.bitmap)
                 }.collect()
         }
 
         fragmentViewModel.buttonState
             .map { it.writeTrack }
             .onEach { state ->
-                btnWriteTrack.setImageResource(if (state is TrackState.Started) R.drawable.ic_stop_track else R.drawable.ic_start_track)
+                binding.btnWriteTrack.setImageResource(if (state is TrackState.Started) R.drawable.ic_stop_track else R.drawable.ic_start_track)
             }
             .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.follow }
             .onEach { state ->
-                btnFollow.setImageResource(if (state) R.drawable.ic_follow_diableled else R.drawable.ic_follow)
+                binding.btnFollow.setImageResource(if (state) R.drawable.ic_follow_diableled else R.drawable.ic_follow)
             }
             .launchIn(lifecycleScope)
 
         fragmentViewModel.buttonState
             .map { it.editGeometry }
             .onEach { state ->
-                vInfo.edit.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_edit)
+                binding.vInfo.binding.btnEdit.setImageResource(if (state) R.drawable.ic_close else R.drawable.ic_edit)
             }
             .launchIn(lifecycleScope)
         fragmentViewModel.markerGeometryState
             .onEach {
-                vInfo.poi.setImageResource(if (it?.marker ?: false) R.drawable.ic_close else R.drawable.ic_poi)
+                binding.vInfo.binding.btnpOI.setImageResource(if (it?.marker ?: false) R.drawable.ic_close else R.drawable.ic_poi)
             }.launchIn(lifecycleScope)
 
         fragmentViewModel.selectedGeometryState
             .onEach { geometry ->
-                vInfo.consume(geometry)
+                binding.vInfo.consume(geometry)
             }.launchIn(lifecycleScope)
 
         lifecycleScope.launch {
             fragmentViewModel.controlState
                 .collectLatest { state ->
                     positionControl?.consume(state)
-                    control_scale.consume(state)
-                    cDirection.consume(state)
-                    cCompass.consume(state)
+                    binding.controlScale.consume(state)
+                    binding.cDirection.consume(state)
+                    binding.cCompass.consume(state)
                 }
         }
     }
 
     private fun setupGUI() {
-        control.listener = this
-        map.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
+
+        binding.control.listener = this
+        binding.map.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
             fragmentViewModel.submitAction(
                 Action.MapAction.ViewRectChanged(
                     Rect(
@@ -163,7 +181,7 @@ class MainFragment : Fragment(), ControlListener {
             )
         }
 
-        vInfo.callback = object: GeometryInfoCallback {
+        binding.vInfo.callback = object: GeometryInfoCallback {
             override fun onEdit(geometry: WktGeometry?) {
                 (geometry as? WktPoint)?.let{
                     fragmentViewModel.submitAction(
@@ -203,9 +221,19 @@ class MainFragment : Fragment(), ControlListener {
 
                 }
             }
+
+            override fun onAdd() {
+                fragmentViewModel.submitAction(Action.ButtonAction.AddPosition)
+            }
+
+            override fun onUpdate() {
+                fragmentViewModel.submitAction(Action.MapAction.Update)
+            }
         }
         setupButtons()
     }
+
+
 
     override fun moveViewBy(x: Int, y: Int) {
         fragmentViewModel.submitAction(Action.MapAction.MoveViewBy(x, y))
@@ -226,24 +254,24 @@ class MainFragment : Fragment(), ControlListener {
     private fun setupButtons() {
 
         //fabGps
-        btnWriteTrack.setOnClickListener {
+        binding.btnWriteTrack.setOnClickListener {
             fragmentViewModel.submitAction(Action.ButtonAction.WriteTrack)
         }
 
-        btnFollow.setOnClickListener {
+        binding.btnFollow.setOnClickListener {
             fragmentViewModel.submitAction(Action.ButtonAction.FollowPosition)
         }
 
 
-        btnAddPoi.setOnClickListener {
+        binding.btnAddPoi.setOnClickListener {
             fragmentViewModel.submitAction(Action.ButtonAction.AddPosition)
         }
 
-        btnOptions.setOnClickListener {
+        binding.btnOptions.setOnClickListener {
             SettingsDialog().show(childFragmentManager, SettingsDialog.TAG)
         }
 
-        btnOpenProject.setOnClickListener {
+        binding.btnOpenProject.setOnClickListener {
             val intent = Intent(Intent.ACTION_GET_CONTENT)
                 .apply {
                     type = "file/*"
@@ -252,8 +280,9 @@ class MainFragment : Fragment(), ControlListener {
 
         }
 
-        btnMarkers.setOnClickListener {
-            MarkersDialog().show(childFragmentManager, MarkersDialog.TAG)
+        binding.btnMarkers.setOnClickListener {
+//            MarkersDialog().show(childFragmentManager, MarkersDialog.TAG)
+            ExpandableDialog().show(childFragmentManager, ExpandableDialog.TAG)
         }
 
     }
